@@ -1,0 +1,14 @@
+<configuration>
+    <track>data/tracks/street.xml</track>
+    <gui>0</gui>
+    <port>3002</port>
+    <optimizations_per_frame type="int">7</optimizations_per_frame>
+    <forward_boost>10</forward_boost>
+    <optimizations_per_frame>8</optimizations_per_frame>
+    <score_threshold>40</score_threshold>
+    <racing_speed>130</racing_speed>
+
+    <bound_factor type="float">0.50</bound_factor>
+    <cross_safety_margin type="float">0.9</cross_safety_margin>
+    <model_path>/tmp/data_tracks_street.xml_37.999987.hinges</model_path>
+</configuration>

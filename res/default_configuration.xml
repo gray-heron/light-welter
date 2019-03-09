@@ -1,0 +1,9 @@
+<configuration>
+    <log_file type="string">log.log</log_file>
+    <config type="string"></config>
+    <verbose type="bool">true</verbose>
+    <gui type="bool">true</gui>
+
+    <resx type="int">1600</resx>
+    <resy type="int">1440</resy>
+</configuration>
