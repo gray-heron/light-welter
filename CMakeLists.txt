@@ -4,6 +4,7 @@ project(light-welter)
 include(CTest)
 include(ExternalProject)
 include(CMakeRC.cmake)
+include(FindPkgConfig)
 
 enable_testing()
 
@@ -31,7 +32,7 @@ include_directories(${Boost_INCLUDE_DIRS})
 
 ExternalProject_Add(sdl2-dependency
   URL https://github.com/libSDL2pp/libSDL2pp/archive/0.16.0.tar.gz
-  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/dependencies -DSDL2PP_WITH_MIXER=OFF -DSDL2PP_WITH_IMAGE=OFF -DSDL2PP_STATIC=ON
+  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/dependencies -DSDL2PP_WITH_MIXER=OFF -DSDL2PP_WITH_IMAGE=ON -DSDL2PP_STATIC=ON
 )
 
 ExternalProject_Add(pugixml-dependency
@@ -40,17 +41,21 @@ ExternalProject_Add(pugixml-dependency
 )
 
 find_package(SDL2 REQUIRED)
+PKG_SEARCH_MODULE(SDL2IMAGE REQUIRED SDL2_image>=2.0.0)
 find_package(OpenGL REQUIRED)                                                          
 find_package(GLEW REQUIRED)
-include_directories(${SDL2_INCLUDE_DIRS})
-
+find_package(assimp REQUIRED)
 find_package(spdlog)
-
 find_package(glm REQUIRED)
-include_directories(${GLM_INCLUDE_DIRS})
-link_directories(${GLM_LIBRARY_DIRS})
 
+include_directories(${GLM_INCLUDE_DIRS})
+include_directories(${SDL2_INCLUDE_DIRS})
+include_directories(${ASSIMP_INCLUDE_DIRS})
+
+link_directories(${ASSIMP_LIBRARY_DIRS})
+link_directories(${GLM_LIBRARY_DIRS})
 link_directories(${CMAKE_BINARY_DIR}/dependencies/lib)
+
 
 # ==============================================================================
 # resources
@@ -67,18 +72,22 @@ set(SRCS_NOMAIN
   src/config.cpp
   src/visualisation.cpp
   src/shader.cpp
+  src/mesh.cpp
+  src/texture.cpp
   
   inc/visualisation.h
   inc/config.h
   inc/exceptions.h
   inc/log.h
   inc/shader.h
+  inc/mesh.h
+  inc/texture.h
   )
 
 add_library (${PROJECT_NAME} STATIC ${SRCS_NOMAIN})
 
 target_link_libraries(${PROJECT_NAME}
-  ${Boost_LIBRARIES} pugixml SDL2pp ${SDL2_LIBRARIES} resources ${CMAKE_THREAD_LIBS_INIT}
+  ${Boost_LIBRARIES} pugixml SDL2pp ${SDL2IMAGE_LIBRARIES} ${SDL2_LIBRARIES} resources ${CMAKE_THREAD_LIBS_INIT} ${ASSIMP_LIBRARIES}
 )
 
 target_link_libraries(${PROJECT_NAME} ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES}) 

@@ -1,12 +1,11 @@
 #version 330 core
 
-// Output data
+in vec2 UV;
 out vec3 color;
+
+uniform sampler2D sampler;
 
 void main()
 {
-
-	// Output color = red 
-	color = vec3(1,0,0);
-
+	color = texture(sampler, UV).rgb;
 }

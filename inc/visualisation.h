@@ -10,6 +10,7 @@
 #include <queue>
 
 #include "log.h"
+#include "mesh.h"
 #include "shader.h"
 
 class Visualisation
@@ -34,6 +35,8 @@ class Visualisation
     glm::vec3 camera_lookat_;
 
     std::queue<Action> action_queue_;
+
+    boost::optional<Mesh> mesh_;
 
     void HandleKeyDown(SDL_KeyboardEvent key);
     void HandleMouseKeyDown(SDL_MouseButtonEvent btn);

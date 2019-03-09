@@ -1,10 +1,11 @@
-[2019-03-09 12:17:32.298] [Configuration] [info] Param "config" = 
-[2019-03-09 12:17:32.298] [Configuration] [info] Param "gui" = true
-[2019-03-09 12:17:32.298] [Configuration] [info] Param "log_file" = log.log
-[2019-03-09 12:17:32.298] [Configuration] [info] Param "resx" = 1600
-[2019-03-09 12:17:32.298] [Configuration] [info] Param "resy" = 1440
-[2019-03-09 12:17:32.298] [Configuration] [info] Param "verbose" = true
-[2019-03-09 12:17:32.405] [ShaderLoader] [info] Compiling shader: shaders/SimpleTransform.vertexshader
-[2019-03-09 12:17:32.405] [ShaderLoader] [info] Compiling shader: shaders/SingleColor.fragmentshader
-[2019-03-09 12:17:32.405] [ShaderLoader] [info] Linking program
-[2019-03-09 12:17:34.792] [main] [info] Exit requested. Bye, bye.
+[2019-03-09 22:16:54.246] [Configuration] [info] Param "config" = 
+[2019-03-09 22:16:54.247] [Configuration] [info] Param "gui" = true
+[2019-03-09 22:16:54.247] [Configuration] [info] Param "log_file" = log.log
+[2019-03-09 22:16:54.247] [Configuration] [info] Param "resx" = 1600
+[2019-03-09 22:16:54.247] [Configuration] [info] Param "resy" = 1440
+[2019-03-09 22:16:54.247] [Configuration] [info] Param "verbose" = true
+[2019-03-09 22:16:54.348] [ShaderLoader] [info] Compiling shader: shaders/SimpleTransform.vertexshader
+[2019-03-09 22:16:54.348] [ShaderLoader] [info] Compiling shader: shaders/SingleColor.fragmentshader
+[2019-03-09 22:16:54.348] [ShaderLoader] [info] Linking program
+[2019-03-09 22:16:54.365] [Mesh] [info] Loaded texture res/phoenix.pcx
+[2019-03-09 22:17:31.849] [main] [info] Exit requested. Bye, bye.

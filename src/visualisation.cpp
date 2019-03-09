@@ -43,7 +43,7 @@ Visualisation::Visualisation()
               Config::inst().GetOption<int>("resy"), SDL_WINDOW_OPENGL),
       main_context_(SDL_GL_CreateContext(window_.Get())),
       rx_(Config::inst().GetOption<int>("resx")),
-      ry_(Config::inst().GetOption<int>("resy")), camera_pos_(4, 3, 3), fov_(65.0f)
+      ry_(Config::inst().GetOption<int>("resy")), camera_pos_(-10, 0, 1), fov_(65.0f)
 {
     SDL_GL_SetSwapInterval(1);
     SDL_GL_ResetAttributes();
@@ -61,6 +61,11 @@ Visualisation::Visualisation()
                                    "shaders/SingleColor.fragmentshader");
 
     mvp_id_ = glGetUniformLocation(programID, "MVP");
+    mesh_ = Mesh("res/phoenix_ugv.md2");
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+
     glUseProgram(programID);
 }
 
@@ -88,39 +93,12 @@ bool Visualisation::Render()
 
     glm::mat4 mvp = projection * view *
                     model; // Remember, matrix multiplication is the other way around
-
-    static const GLfloat g_vertex_buffer_data[] = {
-        -1.0f, -1.0f, 0.0f, 1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-    };
-
-    GLuint vertexbuffer;
-    glGenBuffers(1, &vertexbuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data,
-                 GL_STATIC_DRAW);
     // Clear the screen
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    // Send our transformation to the currently bound shader,
-    // in the "MVP" uniform
     glUniformMatrix4fv(mvp_id_, 1, GL_FALSE, &mvp[0][0]);
 
-    // 1rst attribute buffer : vertices
-    glEnableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-    glVertexAttribPointer(0, // attribute. No particular reason for 0, but must match
-                             // the layout in the shader.
-                          3, // size
-                          GL_FLOAT, // type
-                          GL_FALSE, // normalized?
-                          0,        // stride
-                          (void *)0 // array buffer offset
-    );
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // Draw the triangle !
-    glDrawArrays(GL_TRIANGLES, 0, 3); // 3 indices starting at 0 -> 1 triangle
-
-    glDisableVertexAttribArray(0);
+    mesh_->Render();
 
     // Swap buffers
     SDL_GL_SwapWindow(window_.Get());
