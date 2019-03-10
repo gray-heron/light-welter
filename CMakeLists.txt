@@ -70,18 +70,20 @@ cmrc_add_resource_library(resources res/default_configuration.xml)
 set(SRCS_NOMAIN 
   src/log.cpp
   src/config.cpp
-  src/visualisation.cpp
   src/shader.cpp
   src/mesh.cpp
   src/texture.cpp
+  src/view_raytracer.cpp
+  src/view_opengl.cpp
   
-  inc/visualisation.h
   inc/config.h
   inc/exceptions.h
   inc/log.h
   inc/shader.h
   inc/mesh.h
   inc/texture.h
+  inc/view_raytracer.h
+  inc/view_opengl.h
   )
 
 add_library (${PROJECT_NAME} STATIC ${SRCS_NOMAIN})

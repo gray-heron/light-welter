@@ -2,12 +2,15 @@
 
 #include "config.h"
 #include "log.h"
-#include "visualisation.h"
+#include "view_opengl.h"
+#include "view_raytracer.h"
 
 using std::string;
 
 int main(int argc, char **argv)
 {
+    SDL2pp::SDL sdl_(SDL_INIT_VIDEO);
+
     Log log("main");
     log.Info() << "Ray tracer demo";
 
@@ -28,17 +31,20 @@ int main(int argc, char **argv)
 
     //====================
 
-    Visualisation vis;
+    ViewRaytracer vis_rt;
+    ViewOpenGL vis;
+
     bool exit_requested = false;
     while (!exit_requested)
     {
         vis.Render();
+        vis_rt.Render(vis.GetMVP());
 
         while (auto action = vis.DequeueAction())
         {
             switch (*action)
             {
-            case Visualisation::Exit:
+            case ViewOpenGL::Exit:
                 exit_requested = true;
                 break;
             default:

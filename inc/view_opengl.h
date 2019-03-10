@@ -13,7 +13,7 @@
 #include "mesh.h"
 #include "shader.h"
 
-class Visualisation
+class ViewOpenGL
 {
   public:
     enum Action
@@ -22,10 +22,11 @@ class Visualisation
     };
 
   private:
-    SDL2pp::SDL sdl_;
+    const uint32_t rx_, ry_;
+
     SDL2pp::Window window_;
     SDL_GLContext main_context_;
-    const uint32_t rx_, ry_;
+
     GLuint mvp_id_;
 
     glm::vec3 camera_pos_;
@@ -43,10 +44,11 @@ class Visualisation
     glm::mat4 UpdateCamera();
 
   public:
-    Visualisation();
+    ViewOpenGL();
+    glm::mat4 GetMVP();
 
     bool Render();
-    Log log_{"Visualisation"};
+    Log log_{"ViewOpenGL"};
 
-    boost::optional<Visualisation::Action> DequeueAction();
+    boost::optional<ViewOpenGL::Action> DequeueAction();
 };

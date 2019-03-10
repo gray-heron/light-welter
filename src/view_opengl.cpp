@@ -2,28 +2,10 @@
 #include <SDL2/SDL.h>
 
 #include "config.h"
-#include "visualisation.h"
+#include "view_opengl.h"
 
 using namespace SDL2pp;
 using std::get;
-
-const uint32_t points = 4;
-const uint32_t floatsPerPoint = 3;
-const uint32_t floatsPerColor = 4;
-
-const GLfloat diamond[points][floatsPerPoint] = {
-    {0, 1.0f, 1.0},
-    {1.0f, 1.0f, 1.0},
-    {1.0f, 0, 1.0},
-    {0, 0, 1.0},
-};
-
-const GLfloat colors[points][floatsPerColor] = {
-    {0.0, 1.0, 0.0, 1.0},
-    {1.0, 1.0, 0.0, 1.0},
-    {1.0, 0.0, 0.0, 1.0},
-    {0.0, 0.0, 1.0, 1.0},
-};
 
 glm::vec3 HTN(glm::vec4 homo_vector)
 {
@@ -36,14 +18,12 @@ glm::vec4 NTH(glm::vec3 nonhomo_vector)
     return glm::vec4(nonhomo_vector.x, nonhomo_vector.y, nonhomo_vector.z, 1.0);
 }
 
-Visualisation::Visualisation()
-    : sdl_(SDL_INIT_VIDEO),
-      window_("lightwelter", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-              Config::inst().GetOption<int>("resx"),
-              Config::inst().GetOption<int>("resy"), SDL_WINDOW_OPENGL),
-      main_context_(SDL_GL_CreateContext(window_.Get())),
-      rx_(Config::inst().GetOption<int>("resx")),
-      ry_(Config::inst().GetOption<int>("resy")), camera_pos_(-10, 0, 1), fov_(65.0f)
+ViewOpenGL::ViewOpenGL()
+    : rx_(Config::inst().GetOption<int>("resx")),
+      ry_(Config::inst().GetOption<int>("resy")),
+      window_("OpenGL preview", 10, SDL_WINDOWPOS_CENTERED, rx_, ry_, SDL_WINDOW_OPENGL),
+      main_context_(SDL_GL_CreateContext(window_.Get())), camera_pos_(-10, 0, 1),
+      fov_(65.0f)
 {
     SDL_GL_SetSwapInterval(1);
     SDL_GL_ResetAttributes();
@@ -69,7 +49,7 @@ Visualisation::Visualisation()
     glUseProgram(programID);
 }
 
-glm::mat4 Visualisation::UpdateCamera()
+glm::mat4 ViewOpenGL::UpdateCamera()
 {
     glm::vec4 lookat_h = glm::vec4(1.0f, 0.0f, 0.0f, 1.0);
 
@@ -82,17 +62,25 @@ glm::mat4 Visualisation::UpdateCamera()
     return glm::lookAt(camera_pos_, camera_pos_ + camera_lookat_, glm::vec3(0, 1, 0));
 }
 
-bool Visualisation::Render()
+glm::mat4 ViewOpenGL::GetMVP()
 {
     glm::mat4 projection =
-        glm::perspective(glm::radians(fov_), float(rx_) / float(ry_), 0.1f, 100.0f);
+        glm::perspective(glm::radians(fov_), float(rx_) / float(ry_), 1.0f, 1000.0f);
 
     glm::mat4 model = glm::mat4(1.0f);
 
     glm::mat4 view = UpdateCamera();
 
-    glm::mat4 mvp = projection * view *
-                    model; // Remember, matrix multiplication is the other way around
+    glm::mat4 mvp = projection * view * model;
+
+    return mvp;
+}
+
+bool ViewOpenGL::Render()
+{
+    SDL_GL_MakeCurrent(window_.Get(), main_context_);
+
+    auto mvp = GetMVP();
     // Clear the screen
     glUniformMatrix4fv(mvp_id_, 1, GL_FALSE, &mvp[0][0]);
 
@@ -118,7 +106,7 @@ bool Visualisation::Render()
     }
 }
 
-void Visualisation::HandleKeyDown(SDL_KeyboardEvent key)
+void ViewOpenGL::HandleKeyDown(SDL_KeyboardEvent key)
 {
     glm::vec3 camera_lookat_side =
         HTN(glm::rotate(glm::mat4(1.0), glm::half_pi<float>(), glm::vec3(0, 1, 0)) *
@@ -170,13 +158,13 @@ void Visualisation::HandleKeyDown(SDL_KeyboardEvent key)
     }
 }
 
-void Visualisation::HandleMouseKeyDown(SDL_MouseButtonEvent key)
+void ViewOpenGL::HandleMouseKeyDown(SDL_MouseButtonEvent key)
 {
     if (key.button != SDL_BUTTON_LEFT)
         return;
 }
 
-boost::optional<Visualisation::Action> Visualisation::DequeueAction()
+boost::optional<ViewOpenGL::Action> ViewOpenGL::DequeueAction()
 {
     if (action_queue_.empty())
         return boost::none;

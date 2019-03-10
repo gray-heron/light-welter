@@ -21,14 +21,12 @@ Mesh::MeshEntry::MeshEntry(const std::vector<Vertex> &Vertices,
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * num_indices_,
                  &Indices[0], GL_STATIC_DRAW);
 
-    float wtfs[300];
-    memcpy(wtfs, &Vertices[0], 12 * sizeof(Vertex));
-
     mat_index_ = MaterialIndex;
 };
 
 Mesh::MeshEntry::~MeshEntry()
 {
+    // APPLY RULE OF FIVE
     /*
     glDeleteBuffers(1, &VB);
     glDeleteBuffers(1, &IB);
