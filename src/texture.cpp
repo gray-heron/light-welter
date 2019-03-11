@@ -1,33 +1,60 @@
 
+
 #include <SDL2/SDL_surface.h>
-#include <SDL2pp/Surface.hh>
 #include <boost/filesystem.hpp>
 
 #include "exceptions.h"
 #include "texture.h"
 
-Texture::Texture(GLenum texture_target, const std::string &file_name)
-    : texture_target_(texture_target)
+glm::vec3 GetPixel(SDL_Surface *surface, int x, int y)
 {
-    SDL2pp::Surface surface("res/fail.png");
+    int bpp = surface->format->BytesPerPixel;
+    /* Here p is the address to the pixel we want to retrieve */
+    Uint8 *p = (Uint8 *)surface->pixels + y * surface->pitch + x * bpp;
 
-    if (boost::filesystem::exists(file_name))
+    switch (bpp)
     {
-        surface = SDL2pp::Surface(file_name);
+    case 1:
+        return glm::vec3(float(*p) / float(0xff), float(*p) / float(0xff),
+                         float(*p) / float(0xff));
+        break;
+
+    case 2:
+        ASSERT(0);
+        break;
+
+    case 3:
+        return glm::vec3(float(p[0]) / float(0xff), float(p[1]) / float(0xff),
+                         float(p[2]) / float(0xff));
+        break;
+
+    case 4:
+        return glm::vec3(float(p[0]) / float(0xff), float(p[1]) / float(0xff),
+                         float(p[2]) / float(0xff));
+        break;
+
+    default:
+        ASSERT(0);
+        return glm::vec3();
     }
-    else
-    {
+}
+
+Texture::Texture(GLenum texture_target, const std::string &file_name)
+    : texture_target_(texture_target),
+      surface_(boost::filesystem::exists(file_name) ? SDL2pp::Surface(file_name)
+                                                    : SDL2pp::Surface("res/fail.png")),
+      w_(surface_.GetWidth()), h_(surface_.GetHeight())
+{
+    if (!boost::filesystem::exists(file_name))
         Log("TextureReader").Error() << "Texture: " << file_name << " does not exist!";
-    }
 
-    ASSERT(surface.GetSize().x > 0);
+    ASSERT(surface_.GetSize().x > 0);
 
-    GLuint txID;
     glGenTextures(1, &texture_obj_);
     glBindTexture(texture_target, texture_obj_);
 
     int mode;
-    switch (surface.Get()->format->BytesPerPixel)
+    switch (surface_.Get()->format->BytesPerPixel)
     {
     case 3:
         mode = GL_RGB;
@@ -42,8 +69,8 @@ Texture::Texture(GLenum texture_target, const std::string &file_name)
 
     glBindTexture(texture_target_, texture_obj_);
 
-    glTexImage2D(texture_target_, 0, mode, surface.GetWidth(), surface.GetHeight(), 0,
-                 mode, GL_UNSIGNED_BYTE, surface.Get()->pixels);
+    glTexImage2D(texture_target_, 0, mode, surface_.GetWidth(), surface_.GetHeight(), 0,
+                 mode, GL_UNSIGNED_BYTE, surface_.Get()->pixels);
 
     glTexParameterf(texture_target_, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameterf(texture_target_, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -54,6 +81,13 @@ void Texture::Bind(GLenum texture_unit)
 {
     glActiveTexture(texture_unit);
     glBindTexture(texture_target_, texture_obj_);
+}
+
+glm::vec3 Texture::GetPixel(glm::vec2 uv)
+{
+    int x = uv.x * w_;
+    int y = uv.y * h_;
+    return ::GetPixel(surface_.Get(), x, y);
 }
 
 Texture::~Texture()

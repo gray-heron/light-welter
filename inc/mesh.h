@@ -4,6 +4,7 @@
 #include <assimp/scene.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <list>
 #include <vector>
 
 #include <string>
@@ -47,9 +48,10 @@ class Mesh : public Renderable
 
     bool InitFromScene(const aiScene *pScene, const std::string &Filename);
     MeshEntry InitMesh(const aiMesh *mesh);
-    Texture InitMaterial(const aiMaterial *material, std::string dir);
+    void InitMaterial(const aiMaterial *material, std::string dir);
 
-    std::vector<std::pair<MeshEntry, Texture>> m_Entries;
+    std::list<Texture> materials_;
+    std::vector<std::pair<MeshEntry, Texture &>> m_Entries;
 
     Log log_{"Mesh"};
 };

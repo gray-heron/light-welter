@@ -47,7 +47,19 @@ RayIntersectsTriangle(const glm::vec3 orig, const glm::vec3 ray, const glm::vec3
 
     glm::vec3 result_global = vert0 + result.x * edge2 + result.y * edge1;
 
-    return std::pair<glm::vec3, glm::vec3>(result_global, result);
+    return std::pair<glm::vec3, glm::vec3>(
+        result_global, glm::vec3(1.0f - (result.x + result.y), result.x, result.y));
+}
+
+glm::vec3 GetDiffuse(const Vertex &v1, const Vertex &v2, const Vertex &v3,
+                     glm::vec3 bary_cords, Texture &tex)
+{
+    glm::vec2 uv(0.0f, 0.0f);
+    uv += v1.tex_ * bary_cords.x;
+    uv += v2.tex_ * bary_cords.y;
+    uv += v3.tex_ * bary_cords.z;
+
+    return tex.GetPixel(uv);
 }
 
 Mesh::MeshEntry::MeshEntry(std::vector<Vertex> &&Vertices,
@@ -113,8 +125,8 @@ bool Mesh::InitFromScene(const aiScene *pScene, const std::string &Filename)
 
     for (unsigned int i = 0; i < pScene->mNumMeshes; i++)
     {
-        m_Entries.emplace_back(InitMesh(pScene->mMeshes[i]),
-                               InitMaterial(pScene->mMaterials[i], Dir));
+        InitMaterial(pScene->mMaterials[i], Dir);
+        m_Entries.emplace_back(InitMesh(pScene->mMeshes[i]), materials_.back());
     }
 
     return true;
@@ -154,7 +166,7 @@ Mesh::MeshEntry Mesh::InitMesh(const aiMesh *mesh)
     return MeshEntry(std::move(Vertices), std::move(Indices), mesh->mMaterialIndex);
 }
 
-Texture Mesh::InitMaterial(const aiMaterial *material, std::string dir)
+void Mesh::InitMaterial(const aiMaterial *material, std::string dir)
 {
     // Initialize the materials
 
@@ -166,17 +178,20 @@ Texture Mesh::InitMaterial(const aiMaterial *material, std::string dir)
                                  NULL) == AI_SUCCESS)
         {
             std::string FullPath = dir + "/" + Path.data;
-            return Texture(GL_TEXTURE_2D, FullPath);
+            materials_.emplace_back(GL_TEXTURE_2D, FullPath);
 
             log_.Info() << "Loaded texture " << FullPath;
+            return;
         }
     }
     else
     {
         log_.Warning() << "No diffuse texture found!";
-        return Texture(GL_TEXTURE_2D, "res/fail.png");
+        materials_.emplace_back(GL_TEXTURE_2D, "res/fail.png");
+        return;
     }
 
+    // fixme
     ASSERT(0);
     while (1)
         ;
@@ -234,12 +249,15 @@ boost::optional<Intersection> Mesh::Raytrace(const glm::vec3 &source,
             {
                 std::tie(global_position, barycentric) = *intersection;
 
-                auto intersection_dist = glm::length(source - intersection->first);
+                auto intersection_dist =
+                    glm::abs(glm::distance(source, intersection->first));
 
                 if (intersection_dist < intersection_dist_so_far)
                 {
                     Intersection in;
                     in.position = intersection->first;
+                    in.diffuse = GetDiffuse(vertex1, vertex2, vertex3,
+                                            intersection->second, obj.second);
 
                     intersection_so_far = in;
                     intersection_dist_so_far = intersection_dist;
