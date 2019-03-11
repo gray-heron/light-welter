@@ -18,7 +18,8 @@ class ViewOpenGL
   public:
     enum Action
     {
-        Exit
+        Exit,
+        TakePicture
     };
 
   private:
@@ -37,8 +38,6 @@ class ViewOpenGL
 
     std::queue<Action> action_queue_;
 
-    boost::optional<Mesh> mesh_;
-
     void HandleKeyDown(SDL_KeyboardEvent key);
     void HandleMouseKeyDown(SDL_MouseButtonEvent btn);
     glm::mat4 UpdateCamera();
@@ -46,8 +45,9 @@ class ViewOpenGL
   public:
     ViewOpenGL();
     glm::mat4 GetMVP();
+    glm::vec3 GetCameraPos();
 
-    bool Render();
+    void Render(const Scene &scene);
     Log log_{"ViewOpenGL"};
 
     boost::optional<ViewOpenGL::Action> DequeueAction();

@@ -9,6 +9,7 @@
 
 #include "log.h"
 #include "mesh.h"
+#include "raytracer.h"
 
 class ViewRaytracer
 {
@@ -27,12 +28,12 @@ class ViewRaytracer
 
     uint8_t *raytracer_surface_;
 
-    boost::optional<Mesh> mesh_;
+    Raytracer raytracer_;
 
   public:
     ViewRaytracer();
-    glm::mat4 GetMVP();
 
-    bool Render(glm::mat4 mvp);
+    void TakePicture(glm::vec3 camera_pos, glm::mat4 mvp, const Scene &scene);
+    void Render();
     Log log_{"ViewRaytracer"};
 };

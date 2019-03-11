@@ -9,6 +9,7 @@
 #include <string>
 
 #include "log.h"
+#include "scene.h"
 #include "texture.h"
 
 struct Vertex
@@ -18,35 +19,37 @@ struct Vertex
     glm::vec3 norm_;
 };
 
-class Mesh
+class Mesh : public Renderable
 {
   public:
     Mesh(std::string filename);
     ~Mesh();
 
-    void Render();
+    void RenderByOpenGL() override;
+    boost::optional<Intersection> Raytrace(const glm::vec3 &source,
+                                           const glm::vec3 &target) override;
 
   private:
-    bool InitFromScene(const aiScene *pScene, const std::string &Filename);
-    void InitMesh(const aiMesh *mesh);
-    void InitMaterial(const aiMaterial *material, std::string dir);
-    void Clear();
-
     struct MeshEntry
     {
-        MeshEntry(const std::vector<Vertex> &Vertices,
-                  const std::vector<glm::u32> &Indices, unsigned int MaterialIndex);
+        MeshEntry(std::vector<Vertex> &&Vertices, std::vector<glm::u32> &&Indices,
+                  unsigned int MaterialIndex);
 
         ~MeshEntry();
 
         GLuint VB;
         GLuint IB;
-        unsigned int num_indices_;
         unsigned int mat_index_;
+
+        const std::vector<Vertex> vertices_;
+        const std::vector<glm::u32> indices_;
     };
 
-    std::vector<MeshEntry> m_Entries;
-    std::vector<Texture> m_Textures;
+    bool InitFromScene(const aiScene *pScene, const std::string &Filename);
+    MeshEntry InitMesh(const aiMesh *mesh);
+    Texture InitMaterial(const aiMaterial *material, std::string dir);
+
+    std::vector<std::pair<MeshEntry, Texture>> m_Entries;
 
     Log log_{"Mesh"};
 };

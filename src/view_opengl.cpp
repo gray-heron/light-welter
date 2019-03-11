@@ -23,7 +23,7 @@ ViewOpenGL::ViewOpenGL()
       ry_(Config::inst().GetOption<int>("resy")),
       window_("OpenGL preview", 10, SDL_WINDOWPOS_CENTERED, rx_, ry_, SDL_WINDOW_OPENGL),
       main_context_(SDL_GL_CreateContext(window_.Get())), camera_pos_(-10, 0, 1),
-      fov_(65.0f)
+      fov_(65.0f), pitch_(0.0f), yaw_(0.0f)
 {
     SDL_GL_SetSwapInterval(1);
     SDL_GL_ResetAttributes();
@@ -41,7 +41,6 @@ ViewOpenGL::ViewOpenGL()
                                    "shaders/SingleColor.fragmentshader");
 
     mvp_id_ = glGetUniformLocation(programID, "MVP");
-    mesh_ = Mesh("res/phoenix_ugv.md2");
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
@@ -76,7 +75,9 @@ glm::mat4 ViewOpenGL::GetMVP()
     return mvp;
 }
 
-bool ViewOpenGL::Render()
+glm::vec3 ViewOpenGL::GetCameraPos() { return camera_pos_; }
+
+void ViewOpenGL::Render(const Scene &scene)
 {
     SDL_GL_MakeCurrent(window_.Get(), main_context_);
 
@@ -86,7 +87,10 @@ bool ViewOpenGL::Render()
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    mesh_->Render();
+    for (auto renderable : scene.renderables_)
+    {
+        renderable->RenderByOpenGL();
+    }
 
     // Swap buffers
     SDL_GL_SwapWindow(window_.Get());
@@ -153,7 +157,8 @@ void ViewOpenGL::HandleKeyDown(SDL_KeyboardEvent key)
     case SDLK_ESCAPE:
         action_queue_.push(Action::Exit);
         break;
-    case SDLK_PAUSE:
+    case SDLK_RETURN:
+        action_queue_.push(Action::TakePicture);
         break;
     }
 }

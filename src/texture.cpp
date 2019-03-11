@@ -1,6 +1,7 @@
 
 #include <SDL2/SDL_surface.h>
 #include <SDL2pp/Surface.hh>
+#include <boost/filesystem.hpp>
 
 #include "exceptions.h"
 #include "texture.h"
@@ -8,7 +9,16 @@
 Texture::Texture(GLenum texture_target, const std::string &file_name)
     : texture_target_(texture_target)
 {
-    SDL2pp::Surface surface(file_name);
+    SDL2pp::Surface surface("res/fail.png");
+
+    if (boost::filesystem::exists(file_name))
+    {
+        surface = SDL2pp::Surface(file_name);
+    }
+    else
+    {
+        Log("TextureReader").Error() << "Texture: " << file_name << " does not exist!";
+    }
 
     ASSERT(surface.GetSize().x > 0);
 

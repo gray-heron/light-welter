@@ -15,6 +15,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   add_compile_options(-fno-limit-debug-info)
 endif()
+add_compile_options(-Wall)
 
 include_directories(inc)
 include_directories(${CMAKE_BINARY_DIR}/gen)
@@ -75,6 +76,7 @@ set(SRCS_NOMAIN
   src/texture.cpp
   src/view_raytracer.cpp
   src/view_opengl.cpp
+  src/raytracer.cpp
   
   inc/config.h
   inc/exceptions.h

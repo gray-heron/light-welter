@@ -32,20 +32,27 @@ int main(int argc, char **argv)
     //====================
 
     ViewRaytracer vis_rt;
-    ViewOpenGL vis;
+    ViewOpenGL vis_gl;
+    Scene scene;
+
+    scene.ambient_light_ = {1.0f, 1.0f, 1.0f};
+    scene.renderables_.push_back(new Mesh("res/phoenix_ugv.md2"));
 
     bool exit_requested = false;
     while (!exit_requested)
     {
-        vis.Render();
-        vis_rt.Render(vis.GetMVP());
+        vis_gl.Render(scene);
+        vis_rt.Render();
 
-        while (auto action = vis.DequeueAction())
+        while (auto action = vis_gl.DequeueAction())
         {
             switch (*action)
             {
             case ViewOpenGL::Exit:
                 exit_requested = true;
+                break;
+            case ViewOpenGL::TakePicture:
+                vis_rt.TakePicture(vis_gl.GetCameraPos(), vis_gl.GetMVP(), scene);
                 break;
             default:
                 ASSERT(0, "Action not implemented!")
