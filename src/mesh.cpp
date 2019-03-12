@@ -5,7 +5,7 @@
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 
-boost::optional<std::pair<glm::vec3, glm::vec3>>
+boost::optional<std::pair<float, glm::vec3>>
 RayIntersectsTriangle(const glm::vec3 orig, const glm::vec3 ray, const glm::vec3 vert0,
                       const glm::vec3 vert1, const glm::vec3 vert2)
 
@@ -47,8 +47,8 @@ RayIntersectsTriangle(const glm::vec3 orig, const glm::vec3 ray, const glm::vec3
 
     glm::vec3 result_global = vert0 + result.x * edge2 + result.y * edge1;
 
-    return std::pair<glm::vec3, glm::vec3>(
-        result_global, glm::vec3(1.0f - (result.x + result.y), result.x, result.y));
+    return std::pair<float, glm::vec3>(
+        result.z, glm::vec3(1.0f - (result.x + result.y), result.x, result.y));
 }
 
 glm::vec3 GetDiffuse(const Vertex &v1, const Vertex &v2, const Vertex &v3,
@@ -243,19 +243,18 @@ boost::optional<Intersection> Mesh::Raytrace(const glm::vec3 &source,
             auto vertex2 = vertices[indices[i + 1]];
             auto vertex3 = vertices[indices[i + 2]];
 
-            glm::vec3 global_position, barycentric;
+            glm::vec3 barycentric;
+            float intersection_dist;
+
             if (auto intersection = RayIntersectsTriangle(source, target, vertex1.pos_,
                                                           vertex2.pos_, vertex3.pos_))
             {
-                std::tie(global_position, barycentric) = *intersection;
-
-                auto intersection_dist =
-                    glm::abs(glm::distance(source, intersection->first));
+                std::tie(intersection_dist, barycentric) = *intersection;
 
                 if (intersection_dist < intersection_dist_so_far)
                 {
                     Intersection in;
-                    in.position = intersection->first;
+                    // in.position = intersection->first;
                     in.diffuse = GetDiffuse(vertex1, vertex2, vertex3,
                                             intersection->second, obj.second);
 

@@ -22,7 +22,7 @@ ViewOpenGL::ViewOpenGL()
     : rx_(Config::inst().GetOption<int>("resx")),
       ry_(Config::inst().GetOption<int>("resy")),
       window_("OpenGL preview", 10, SDL_WINDOWPOS_CENTERED, rx_, ry_, SDL_WINDOW_OPENGL),
-      main_context_(SDL_GL_CreateContext(window_.Get())), camera_pos_(-10, 0, 1),
+      main_context_(SDL_GL_CreateContext(window_.Get())), camera_pos_(-100, 0, 1),
       fov_(65.0f), pitch_(0.0f), yaw_(0.0f)
 {
     SDL_GL_SetSwapInterval(1);
