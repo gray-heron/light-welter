@@ -2,15 +2,13 @@
 #include "mesh.h"
 #include "exceptions.h"
 
-#include <assimp/Importer.hpp>
-#include <assimp/postprocess.h>
-
+// https://stackoverflow.com/questions/37652337/m%C3%B6ller-trumbore-ray-tri-intersection-algorithm
 boost::optional<std::pair<float, glm::vec3>>
 RayIntersectsTriangle(const glm::vec3 orig, const glm::vec3 ray, const glm::vec3 vert0,
                       const glm::vec3 vert1, const glm::vec3 vert2)
 
 {
-    glm::vec3 result;
+    glm::vec2 result;
 
     const glm::vec3 edge1 = vert1 - vert0;
     const glm::vec3 edge2 = vert2 - vert0;
@@ -36,19 +34,38 @@ RayIntersectsTriangle(const glm::vec3 orig, const glm::vec3 ray, const glm::vec3
     if (result.y < 0.0f || result.x + result.y > 1.0f)
         return boost::none;
 
-    result.z = glm::dot(edge2, qvec) * invDet;
+    float t = glm::dot(edge2, qvec) * invDet;
 
-    // const float abs = std::abs(result.z);
-    // const float dist = std::abs(glm::distance(orig, ray));
-    // const glm::vec3 intersection = vert0 + result.x * edge2 + result.y * edge1;
-
-    if (result.z < epsilon)
+    if (t < epsilon)
         return boost::none;
 
-    glm::vec3 result_global = vert0 + result.x * edge2 + result.y * edge1;
-
     return std::pair<float, glm::vec3>(
-        result.z, glm::vec3(1.0f - (result.x + result.y), result.x, result.y));
+        t, glm::vec3(1.0f - (result.x + result.y), result.x, result.y));
+}
+
+// https://stackoverflow.com/questions/29184311/how-to-rotate-a-skinned-models-bones-in-c-using-assimp
+inline glm::mat4 aiMatrix4x4ToGlm(const aiMatrix4x4 &from)
+{
+    glm::mat4 to;
+
+    to[0][0] = (GLfloat)from.a1;
+    to[0][1] = (GLfloat)from.b1;
+    to[0][2] = (GLfloat)from.c1;
+    to[0][3] = (GLfloat)from.d1;
+    to[1][0] = (GLfloat)from.a2;
+    to[1][1] = (GLfloat)from.b2;
+    to[1][2] = (GLfloat)from.c2;
+    to[1][3] = (GLfloat)from.d2;
+    to[2][0] = (GLfloat)from.a3;
+    to[2][1] = (GLfloat)from.b3;
+    to[2][2] = (GLfloat)from.c3;
+    to[2][3] = (GLfloat)from.d3;
+    to[3][0] = (GLfloat)from.a4;
+    to[3][1] = (GLfloat)from.b4;
+    to[3][2] = (GLfloat)from.c4;
+    to[3][3] = (GLfloat)from.d4;
+
+    return to;
 }
 
 glm::vec3 GetDiffuse(const Vertex &v1, const Vertex &v2, const Vertex &v3,
@@ -90,7 +107,6 @@ Mesh::MeshEntry::~MeshEntry()
 
 Mesh::Mesh(std::string filename)
 {
-    Assimp::Importer Importer;
 
     const aiScene *pScene = Importer.ReadFile(
         filename.c_str(), aiProcess_Triangulate | aiProcess_GenSmoothNormals |
@@ -107,6 +123,10 @@ bool Mesh::InitFromScene(const aiScene *pScene, const std::string &Filename)
     // Extract the directory part from the file name
     std::string::size_type SlashIndex = Filename.find_last_of("/");
     std::string Dir;
+    materials_ = std::make_unique<boost::optional<Texture>[]>(pScene->mNumMaterials);
+
+    log_.Info() << "Scene has textures? " << pScene->HasTextures();
+    log_.Info() << "Scene has lights? " << pScene->HasLights();
 
     if (SlashIndex == std::string::npos)
     {
@@ -121,20 +141,24 @@ bool Mesh::InitFromScene(const aiScene *pScene, const std::string &Filename)
         Dir = Filename.substr(0, SlashIndex);
     }
 
-    ASSERT(pScene->mNumMeshes == pScene->mNumMaterials);
+    for (unsigned int i = 0; i < pScene->mNumMaterials; i++)
+    {
+        InitMaterial(i, pScene->mMaterials[i], Dir);
+    }
 
     for (unsigned int i = 0; i < pScene->mNumMeshes; i++)
     {
-        InitMaterial(pScene->mMaterials[i], Dir);
-        m_Entries.emplace_back(InitMesh(pScene->mMeshes[i]), materials_.back());
+        m_Entries.emplace_back(InitMesh(pScene->mMeshes[i]),
+                               materials_[pScene->mMeshes[i]->mMaterialIndex]);
     }
+
+    scene_ = pScene;
 
     return true;
 }
 
 Mesh::MeshEntry Mesh::InitMesh(const aiMesh *mesh)
 {
-
     std::vector<Vertex> Vertices;
     std::vector<glm::u32> Indices;
 
@@ -166,9 +190,11 @@ Mesh::MeshEntry Mesh::InitMesh(const aiMesh *mesh)
     return MeshEntry(std::move(Vertices), std::move(Indices), mesh->mMaterialIndex);
 }
 
-void Mesh::InitMaterial(const aiMaterial *material, std::string dir)
+void Mesh::InitMaterial(int index, const aiMaterial *material, std::string dir)
 {
-    // Initialize the materials
+    aiColor3D diff_color;
+    material->Get(AI_MATKEY_COLOR_DIFFUSE, diff_color);
+    auto glm_diff_color = glm::vec3(diff_color.r, diff_color.g, diff_color.b);
 
     if (material->GetTextureCount(aiTextureType_DIFFUSE) > 0)
     {
@@ -178,7 +204,7 @@ void Mesh::InitMaterial(const aiMaterial *material, std::string dir)
                                  NULL) == AI_SUCCESS)
         {
             std::string FullPath = dir + "/" + Path.data;
-            materials_.emplace_back(GL_TEXTURE_2D, FullPath);
+            materials_[index].emplace(GL_TEXTURE_2D, glm_diff_color, FullPath);
 
             log_.Info() << "Loaded texture " << FullPath;
             return;
@@ -187,7 +213,7 @@ void Mesh::InitMaterial(const aiMaterial *material, std::string dir)
     else
     {
         log_.Warning() << "No diffuse texture found!";
-        materials_.emplace_back(GL_TEXTURE_2D, "res/fail.png");
+        materials_[index].emplace(GL_TEXTURE_2D, glm_diff_color, "res/fail.png");
         return;
     }
 
@@ -197,14 +223,21 @@ void Mesh::InitMaterial(const aiMaterial *material, std::string dir)
         ;
 }
 
-void Mesh::RenderByOpenGL()
+void Mesh::RenderByOpenGL(OpenGLRenderingContext context, aiNode *node)
 {
+    if (node == nullptr)
+        node = scene_->mRootNode;
+
+    context.vp = context.vp * aiMatrix4x4ToGlm(node->mTransformation);
+
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
     glEnableVertexAttribArray(2);
 
-    for (auto &obj : m_Entries)
+    for (int i = 0; i < node->mNumMeshes; i++)
     {
+        auto &obj = m_Entries[node->mMeshes[i]];
+
         glBindBuffer(GL_ARRAY_BUFFER, obj.first.VB);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                               (const GLvoid *)offsetof(Vertex, pos_));
@@ -215,8 +248,19 @@ void Mesh::RenderByOpenGL()
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, obj.first.IB);
 
-        const unsigned int MaterialIndex = obj.first.mat_index_;
-        obj.second.Bind(GL_TEXTURE0);
+        auto dc = obj.second->diffuse_factor_;
+
+        glUniformMatrix4fv(context.mvp_id_, 1, GL_FALSE, &context.vp[0][0]);
+        glUniform3f(context.diffuse_id_, dc.x, dc.y, dc.z);
+
+        if (auto &texture = obj.second)
+        {
+            texture->Bind(GL_TEXTURE0);
+        }
+        else
+        {
+            log_.Warning() << "Texture missing!";
+        }
 
         glDrawElements(GL_TRIANGLES, obj.first.indices_.size(), GL_UNSIGNED_INT, 0);
     }
@@ -224,6 +268,11 @@ void Mesh::RenderByOpenGL()
     glDisableVertexAttribArray(0);
     glDisableVertexAttribArray(1);
     glDisableVertexAttribArray(2);
+
+    for (int i = 0; i < node->mNumChildren; i++)
+    {
+        RenderByOpenGL(context, node->mChildren[i]);
+    }
 }
 
 boost::optional<Intersection> Mesh::Raytrace(const glm::vec3 &source,
@@ -231,6 +280,9 @@ boost::optional<Intersection> Mesh::Raytrace(const glm::vec3 &source,
 {
     boost::optional<Intersection> intersection_so_far;
     auto intersection_dist_so_far = std::numeric_limits<float>::infinity();
+
+    glm::vec3 barycentric;
+    float intersection_dist;
 
     for (const auto &obj : m_Entries)
     {
@@ -243,9 +295,6 @@ boost::optional<Intersection> Mesh::Raytrace(const glm::vec3 &source,
             auto vertex2 = vertices[indices[i + 1]];
             auto vertex3 = vertices[indices[i + 2]];
 
-            glm::vec3 barycentric;
-            float intersection_dist;
-
             if (auto intersection = RayIntersectsTriangle(source, target, vertex1.pos_,
                                                           vertex2.pos_, vertex3.pos_))
             {
@@ -254,9 +303,9 @@ boost::optional<Intersection> Mesh::Raytrace(const glm::vec3 &source,
                 if (intersection_dist < intersection_dist_so_far)
                 {
                     Intersection in;
-                    // in.position = intersection->first;
+
                     in.diffuse = GetDiffuse(vertex1, vertex2, vertex3,
-                                            intersection->second, obj.second);
+                                            intersection->second, *obj.second);
 
                     intersection_so_far = in;
                     intersection_dist_so_far = intersection_dist;

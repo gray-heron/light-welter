@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <list>
+#include <memory>
 #include <vector>
 
 #include <string>
@@ -26,7 +27,7 @@ class Mesh : public Renderable
     Mesh(std::string filename);
     ~Mesh();
 
-    void RenderByOpenGL() override;
+    void RenderByOpenGL(OpenGLRenderingContext context, aiNode *node = nullptr) override;
     boost::optional<Intersection> Raytrace(const glm::vec3 &source,
                                            const glm::vec3 &target) override;
 
@@ -48,10 +49,13 @@ class Mesh : public Renderable
 
     bool InitFromScene(const aiScene *pScene, const std::string &Filename);
     MeshEntry InitMesh(const aiMesh *mesh);
-    void InitMaterial(const aiMaterial *material, std::string dir);
+    void InitMaterial(int index, const aiMaterial *material, std::string dir);
 
-    std::list<Texture> materials_;
-    std::vector<std::pair<MeshEntry, Texture &>> m_Entries;
+    std::unique_ptr<boost::optional<Texture>[]> materials_;
+    std::vector<std::pair<MeshEntry, boost::optional<Texture> &>> m_Entries;
+
+    const aiScene *scene_;
+    Assimp::Importer Importer;
 
     Log log_{"Mesh"};
 };

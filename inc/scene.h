@@ -1,6 +1,9 @@
 
 #pragma once
 
+#include <GL/glew.h>
+#include <assimp/Importer.hpp>
+#include <assimp/postprocess.h>
 #include <boost/optional.hpp>
 #include <glm/glm.hpp>
 
@@ -10,10 +13,18 @@ struct Intersection
     glm::vec3 diffuse;
 };
 
+struct OpenGLRenderingContext
+{
+    glm::mat4 vp;
+    GLuint mvp_id_;
+    GLuint diffuse_id_;
+};
+
 class Renderable
 {
   public:
-    virtual void RenderByOpenGL() = 0;
+    virtual void RenderByOpenGL(OpenGLRenderingContext context,
+                                struct aiNode *node = nullptr) = 0;
 
     virtual boost::optional<Intersection> Raytrace(const glm::vec3 &source,
                                                    const glm::vec3 &target) = 0;

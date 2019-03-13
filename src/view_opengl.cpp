@@ -37,10 +37,10 @@ ViewOpenGL::ViewOpenGL()
     glGenVertexArrays(1, &VertexArrayID);
     glBindVertexArray(VertexArrayID);
 
-    GLuint programID = LoadShaders("shaders/SimpleTransform.vertexshader",
-                                   "shaders/SingleColor.fragmentshader");
+    GLuint programID = LoadShaders("shaders/vertex.shader", "shaders/fragment.shader");
 
-    mvp_id_ = glGetUniformLocation(programID, "MVP");
+    rendering_context_.mvp_id_ = glGetUniformLocation(programID, "MVP");
+    rendering_context_.diffuse_id_ = glGetUniformLocation(programID, "diffuse_color");
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
@@ -81,15 +81,13 @@ void ViewOpenGL::Render(const Scene &scene)
 {
     SDL_GL_MakeCurrent(window_.Get(), main_context_);
 
-    auto mvp = GetMVP();
-    // Clear the screen
-    glUniformMatrix4fv(mvp_id_, 1, GL_FALSE, &mvp[0][0]);
+    rendering_context_.vp = GetMVP();
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     for (auto renderable : scene.renderables_)
     {
-        renderable->RenderByOpenGL();
+        renderable->RenderByOpenGL(rendering_context_);
     }
 
     // Swap buffers

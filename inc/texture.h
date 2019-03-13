@@ -8,11 +8,13 @@
 class Texture
 {
   public:
-    Texture(GLenum texture_target, const std::string &file_name);
+    Texture(GLenum texture_target, glm::vec3 diffuse_factor,
+            const std::string &file_name);
 
     ~Texture();
     void Bind(GLenum TextureUnit);
     glm::vec3 GetPixel(glm::vec2 uv);
+    glm::vec3 diffuse_factor_;
 
   private:
     GLenum texture_target_;

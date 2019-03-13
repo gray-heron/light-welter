@@ -28,8 +28,6 @@ class ViewOpenGL
     SDL2pp::Window window_;
     SDL_GLContext main_context_;
 
-    GLuint mvp_id_;
-
     glm::vec3 camera_pos_;
     float fov_;
     float pitch_, yaw_;
@@ -41,6 +39,8 @@ class ViewOpenGL
     void HandleKeyDown(SDL_KeyboardEvent key);
     void HandleMouseKeyDown(SDL_MouseButtonEvent btn);
     glm::mat4 UpdateCamera();
+
+    OpenGLRenderingContext rendering_context_;
 
   public:
     ViewOpenGL();

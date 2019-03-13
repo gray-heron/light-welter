@@ -41,6 +41,8 @@ void ViewRaytracer::Render()
 
 void ViewRaytracer::TakePicture(glm::vec3 camera_pos, glm::mat4 mvp, const Scene &scene)
 {
+    Log("RaytracerView").Info() << "Started taking picture.";
+
     auto inv_mvp = glm::inverse(mvp);
 
     auto rt_func = [&](int x_start, int cols) -> void {
@@ -106,4 +108,6 @@ void ViewRaytracer::TakePicture(glm::vec3 camera_pos, glm::mat4 mvp, const Scene
         renderer_.Copy(tex_, NullOpt, NullOpt);
         renderer_.Present();
     }
+
+    Log("RaytracerView").Info() << "Taking picture done.";
 }

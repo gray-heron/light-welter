@@ -28,7 +28,7 @@ GLuint LoadShaders(std::string vertex_shader_path, std::string fragment_shader_p
     std::string VertexShaderCode;
     std::ifstream VertexShaderStream(vertex_shader_path, std::ios::in);
 
-    ASSERT(VertexShaderStream.is_open(), "Impossible to open vertex shader file!");
+    ASSERT(VertexShaderStream.is_open(), "Cannot open vertex shader file!");
 
     {
         std::stringstream sstr;
@@ -41,7 +41,7 @@ GLuint LoadShaders(std::string vertex_shader_path, std::string fragment_shader_p
     std::string FragmentShaderCode;
     std::ifstream FragmentShaderStream(fragment_shader_path, std::ios::in);
 
-    ASSERT(FragmentShaderStream.is_open(), "Impossible to open vertex shader file!");
+    ASSERT(FragmentShaderStream.is_open(), "Cannot open vertex shader file!");
 
     {
         std::stringstream sstr;
@@ -75,13 +75,11 @@ GLuint LoadShaders(std::string vertex_shader_path, std::string fragment_shader_p
                     << VertexShaderErrorMessage;
     }
 
-    // Compile Fragment Shader
     log.Info() << "Compiling shader: " << fragment_shader_path;
     char const *FragmentSourcePointer = FragmentShaderCode.c_str();
     glShaderSource(FragmentShaderID, 1, &FragmentSourcePointer, NULL);
     glCompileShader(FragmentShaderID);
 
-    // Check Fragment Shader
     glGetShaderiv(FragmentShaderID, GL_COMPILE_STATUS, &Result);
     glGetShaderiv(FragmentShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
 
@@ -97,7 +95,6 @@ GLuint LoadShaders(std::string vertex_shader_path, std::string fragment_shader_p
                     << FragmentShaderErrorMessage;
     }
 
-    // Link the program
     log.Info() << "Linking program";
 
     GLuint ProgramID = glCreateProgram();
@@ -105,7 +102,6 @@ GLuint LoadShaders(std::string vertex_shader_path, std::string fragment_shader_p
     glAttachShader(ProgramID, FragmentShaderID);
     glLinkProgram(ProgramID);
 
-    // Check the program
     glGetProgramiv(ProgramID, GL_LINK_STATUS, &Result);
     glGetProgramiv(ProgramID, GL_INFO_LOG_LENGTH, &InfoLogLength);
     if (InfoLogLength > 0)

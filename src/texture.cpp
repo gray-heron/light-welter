@@ -39,8 +39,9 @@ glm::vec3 GetPixel(SDL_Surface *surface, int x, int y)
     }
 }
 
-Texture::Texture(GLenum texture_target, const std::string &file_name)
-    : texture_target_(texture_target),
+Texture::Texture(GLenum texture_target, glm::vec3 diff_color,
+                 const std::string &file_name)
+    : diffuse_factor_(diff_color), texture_target_(texture_target),
       surface_(boost::filesystem::exists(file_name) ? SDL2pp::Surface(file_name)
                                                     : SDL2pp::Surface("res/fail.png")),
       w_(surface_.GetWidth()), h_(surface_.GetHeight())
@@ -87,7 +88,7 @@ glm::vec3 Texture::GetPixel(glm::vec2 uv)
 {
     int x = uv.x * w_;
     int y = uv.y * h_;
-    return ::GetPixel(surface_.Get(), x, y);
+    return ::GetPixel(surface_.Get(), x, y) * diffuse_factor_;
 }
 
 Texture::~Texture()

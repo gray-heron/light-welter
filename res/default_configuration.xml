@@ -4,8 +4,8 @@
     <verbose type="bool">true</verbose>
     <gui type="bool">true</gui>
 
-    <resx type="int">1920</resx>
-    <resy type="int">1080</resy>
+    <resx type="int">800</resx>
+    <resy type="int">600</resy>
 
     <threads type="int">4</threads>
     <cols_per_thread type="int">4</cols_per_thread>
