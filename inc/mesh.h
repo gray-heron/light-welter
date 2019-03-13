@@ -29,7 +29,9 @@ class Mesh : public Renderable
 
     void RenderByOpenGL(OpenGLRenderingContext context, aiNode *node = nullptr) override;
     boost::optional<Intersection> Raytrace(const glm::vec3 &source,
-                                           const glm::vec3 &target) override;
+                                           const glm::vec3 &target,
+                                           const OpenGLRenderingContext &context,
+                                           int recursion_depth) override;
 
   private:
     struct MeshEntry

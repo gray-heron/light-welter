@@ -64,9 +64,9 @@ void ViewRaytracer::TakePicture(glm::vec3 camera_pos, glm::mat4 mvp, const Scene
 
                 if (intersection)
                 {
-                    b = float(0xff) * intersection->diffuse.x;
-                    g = float(0xff) * intersection->diffuse.y;
-                    r = float(0xff) * intersection->diffuse.z;
+                    b = float(0xff) * glm::min(intersection->diffuse.x, 1.0f);
+                    g = float(0xff) * glm::min(intersection->diffuse.y, 1.0f);
+                    r = float(0xff) * glm::min(intersection->diffuse.z, 1.0f);
                     a = 0xff;
                 }
                 else

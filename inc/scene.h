@@ -13,11 +13,21 @@ struct Intersection
     glm::vec3 diffuse;
 };
 
+struct PointLight
+{
+    glm::vec3 position;
+    glm::vec3 intensity_rgb;
+};
+
 struct OpenGLRenderingContext
 {
     glm::mat4 vp;
+
     GLuint mvp_id_;
     GLuint diffuse_id_;
+
+    boost::optional<const std::vector<PointLight> &> lights_;
+    glm::vec3 ambient;
 };
 
 class Renderable
@@ -27,15 +37,10 @@ class Renderable
                                 struct aiNode *node = nullptr) = 0;
 
     virtual boost::optional<Intersection> Raytrace(const glm::vec3 &source,
-                                                   const glm::vec3 &target) = 0;
+                                                   const glm::vec3 &target,
+                                                   const OpenGLRenderingContext &context,
+                                                   int recursion_depth) = 0;
 };
-
-struct PointLight
-{
-    glm::vec3 position;
-    glm::vec3 intensity_rgb;
-};
-
 class Scene
 {
   public:

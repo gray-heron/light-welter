@@ -35,9 +35,14 @@ int main(int argc, char **argv)
     ViewOpenGL vis_gl;
     Scene scene;
 
-    scene.ambient_light_ = {1.0f, 1.0f, 1.0f};
-    // scene.renderables_.push_back(new Mesh("res/phoenix/phoenix_ugv.md2"));
-    scene.renderables_.push_back(new Mesh("res/view_test/cornell_box.obj"));
+    scene.ambient_light_ = {0.15f, 0.15f, 0.15f};
+    scene.renderables_.push_back(new Mesh("res/phoenix/phoenix_ugv.md2"));
+    // scene.renderables_.push_back(new Mesh("res/view_test/cornell_box.obj"));
+
+    scene.point_lights_.push_back({
+        glm::vec3(0, 5000, 0),
+        glm::vec3(0.8f, 0.1f, 0.1f),
+    });
 
     bool exit_requested = false;
     while (!exit_requested)

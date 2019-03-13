@@ -2,8 +2,9 @@
 #include "mesh.h"
 #include "exceptions.h"
 
-// https://stackoverflow.com/questions/37652337/m%C3%B6ller-trumbore-ray-tri-intersection-algorithm
-boost::optional<std::pair<float, glm::vec3>>
+// https://gamedev.stackexchange.com/questions/133109/m%C3%B6ller-trumbore-false-positive
+// dist, intersection pos, barycentric, normal
+boost::optional<std::tuple<float, glm::vec3, glm::vec3, glm::vec3>>
 RayIntersectsTriangle(const glm::vec3 orig, const glm::vec3 ray, const glm::vec3 vert0,
                       const glm::vec3 vert1, const glm::vec3 vert2)
 
@@ -39,8 +40,13 @@ RayIntersectsTriangle(const glm::vec3 orig, const glm::vec3 ray, const glm::vec3
     if (t < epsilon)
         return boost::none;
 
-    return std::pair<float, glm::vec3>(
-        t, glm::vec3(1.0f - (result.x + result.y), result.x, result.y));
+    glm::vec3 intersection = vert0 + result.x * edge2 + result.y * edge1;
+
+    auto normal = glm::normalize(glm::cross(edge1, edge2));
+
+    return std::tuple<float, glm::vec3, glm::vec3, glm::vec3>(
+        t, intersection, glm::vec3(1.0f - (result.x + result.y), result.x, result.y),
+        normal);
 }
 
 // https://stackoverflow.com/questions/29184311/how-to-rotate-a-skinned-models-bones-in-c-using-assimp
@@ -276,11 +282,14 @@ void Mesh::RenderByOpenGL(OpenGLRenderingContext context, aiNode *node)
 }
 
 boost::optional<Intersection> Mesh::Raytrace(const glm::vec3 &source,
-                                             const glm::vec3 &target)
+                                             const glm::vec3 &target,
+                                             const OpenGLRenderingContext &context,
+                                             int recursion_depth)
 {
     boost::optional<Intersection> intersection_so_far;
     auto intersection_dist_so_far = std::numeric_limits<float>::infinity();
 
+    glm::vec3 pos, normal;
     glm::vec3 barycentric;
     float intersection_dist;
 
@@ -298,14 +307,36 @@ boost::optional<Intersection> Mesh::Raytrace(const glm::vec3 &source,
             if (auto intersection = RayIntersectsTriangle(source, target, vertex1.pos_,
                                                           vertex2.pos_, vertex3.pos_))
             {
-                std::tie(intersection_dist, barycentric) = *intersection;
+                if (recursion_depth == 0)
+                    return Intersection();
+
+                std::tie(intersection_dist, pos, barycentric, normal) = *intersection;
 
                 if (intersection_dist < intersection_dist_so_far)
                 {
                     Intersection in;
+                    in.diffuse = context.ambient;
+                    auto vertex_pos = vertex1.pos_ * barycentric.x;
+                    vertex_pos += vertex2.pos_ * barycentric.y;
+                    vertex_pos += vertex3.pos_ * barycentric.z;
 
-                    in.diffuse = GetDiffuse(vertex1, vertex2, vertex3,
-                                            intersection->second, *obj.second);
+                    for (const auto &light : *context.lights_)
+                    {
+
+                        if (Raytrace(vertex_pos, light.position, context,
+                                     recursion_depth - 1))
+                            continue;
+
+                        auto light_to_intersection = glm::normalize(light.position - pos);
+                        auto angle_factor =
+                            glm::abs(glm::dot<3, float, glm::qualifier::highp>(
+                                light_to_intersection, glm::normalize(normal)));
+                        angle_factor = glm::abs(glm::normalize(normal).y);
+                        in.diffuse += angle_factor * light.intensity_rgb;
+                    }
+
+                    in.diffuse *=
+                        GetDiffuse(vertex1, vertex2, vertex3, barycentric, *obj.second);
 
                     intersection_so_far = in;
                     intersection_dist_so_far = intersection_dist;
