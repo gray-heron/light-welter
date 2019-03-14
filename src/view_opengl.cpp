@@ -18,11 +18,14 @@ glm::vec4 NTH(glm::vec3 nonhomo_vector)
     return glm::vec4(nonhomo_vector.x, nonhomo_vector.y, nonhomo_vector.z, 1.0);
 }
 
+extern std::string S(glm::vec4 in);
+extern std::string S(glm::vec3 in);
+
 ViewOpenGL::ViewOpenGL()
     : rx_(Config::inst().GetOption<int>("resx")),
       ry_(Config::inst().GetOption<int>("resy")),
       window_("OpenGL preview", 10, SDL_WINDOWPOS_CENTERED, rx_, ry_, SDL_WINDOW_OPENGL),
-      main_context_(SDL_GL_CreateContext(window_.Get())), camera_pos_(-100, 0, 1),
+      main_context_(SDL_GL_CreateContext(window_.Get())), camera_pos_(-10.0f, 0, 0),
       fov_(65.0f), pitch_(0.0f), yaw_(0.0f)
 {
     SDL_GL_SetSwapInterval(1);
@@ -159,6 +162,8 @@ void ViewOpenGL::HandleKeyDown(SDL_KeyboardEvent key)
         action_queue_.push(Action::TakePicture);
         break;
     }
+
+    log_.Info() << "Camera at " << S(camera_pos_) << " " << pitch_ << " " << yaw_;
 }
 
 void ViewOpenGL::HandleMouseKeyDown(SDL_MouseButtonEvent key)

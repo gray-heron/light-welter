@@ -55,7 +55,8 @@ void ViewRaytracer::TakePicture(glm::vec3 camera_pos, glm::mat4 mvp, const Scene
                 glm::vec4 ray_r(xr, -yr, 1, 1);
 
                 auto target = inv_mvp * ray_r;
-                auto intersection = raytracer_.Trace(camera_pos, target, scene);
+                auto intersection =
+                    raytracer_.Trace(camera_pos, glm::normalize(target), scene);
 
                 uint8_t b;
                 uint8_t g;

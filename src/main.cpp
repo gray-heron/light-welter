@@ -38,10 +38,15 @@ int main(int argc, char **argv)
     scene.ambient_light_ = {0.15f, 0.15f, 0.15f};
     scene.renderables_.push_back(new Mesh("res/phoenix/phoenix_ugv.md2"));
     // scene.renderables_.push_back(new Mesh("res/view_test/cornell_box.obj"));
-
+    /*
+        scene.point_lights_.push_back({
+            glm::vec3(278.0f, 448.0f, 279.5f),
+            glm::vec3(0.7f, 0.7f, 0.7f),
+        });
+        */
     scene.point_lights_.push_back({
-        glm::vec3(0, 5000, 0),
-        glm::vec3(0.8f, 0.1f, 0.1f),
+        glm::vec3(100.0f, 220.0f, 100.5f),
+        glm::vec3(0.8f, 0.8f, 0.8f),
     });
 
     bool exit_requested = false;

@@ -16,7 +16,7 @@ RayIntersectsTriangle(const glm::vec3 orig, const glm::vec3 ray, const glm::vec3
     const glm::vec3 pvec = glm::cross(ray, edge2);
     const float det = glm::dot(edge1, pvec);
 
-    const float epsilon = std::numeric_limits<float>::epsilon();
+    const float epsilon = 32.0f * std::numeric_limits<float>::epsilon();
 
     if (det > -epsilon && det < epsilon)
         return boost::none;
@@ -40,7 +40,8 @@ RayIntersectsTriangle(const glm::vec3 orig, const glm::vec3 ray, const glm::vec3
     if (t < epsilon)
         return boost::none;
 
-    glm::vec3 intersection = vert0 + result.x * edge2 + result.y * edge1;
+    // glm::vec3 intersection = vert0 + result.x * edge2 + result.y * edge1;
+    glm::vec3 intersection = orig + ray * t;
 
     auto normal = glm::normalize(glm::cross(edge1, edge2));
 
@@ -307,10 +308,15 @@ boost::optional<Intersection> Mesh::Raytrace(const glm::vec3 &source,
             if (auto intersection = RayIntersectsTriangle(source, target, vertex1.pos_,
                                                           vertex2.pos_, vertex3.pos_))
             {
-                if (recursion_depth == 0)
-                    return Intersection();
-
                 std::tie(intersection_dist, pos, barycentric, normal) = *intersection;
+
+                if (recursion_depth == 0)
+                {
+                    if (intersection && intersection_dist < 1.0f)
+                        return Intersection();
+                    else
+                        continue;
+                }
 
                 if (intersection_dist < intersection_dist_so_far)
                 {
@@ -323,15 +329,15 @@ boost::optional<Intersection> Mesh::Raytrace(const glm::vec3 &source,
                     for (const auto &light : *context.lights_)
                     {
 
-                        if (Raytrace(vertex_pos, light.position, context,
+                        if (Raytrace(vertex_pos, light.position - vertex_pos, context,
                                      recursion_depth - 1))
                             continue;
 
-                        auto light_to_intersection = glm::normalize(light.position - pos);
+                        auto light_to_intersection =
+                            glm::normalize(light.position - vertex_pos);
                         auto angle_factor =
                             glm::abs(glm::dot<3, float, glm::qualifier::highp>(
                                 light_to_intersection, glm::normalize(normal)));
-                        angle_factor = glm::abs(glm::normalize(normal).y);
                         in.diffuse += angle_factor * light.intensity_rgb;
                     }
 
