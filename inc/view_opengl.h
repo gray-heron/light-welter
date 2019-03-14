@@ -32,8 +32,6 @@ class ViewOpenGL
     float fov_;
     float pitch_, yaw_;
 
-    glm::vec3 camera_lookat_;
-
     std::queue<Action> action_queue_;
 
     void HandleKeyDown(SDL_KeyboardEvent key);
@@ -43,6 +41,9 @@ class ViewOpenGL
     OpenGLRenderingContext rendering_context_;
 
   public:
+    boost::optional<glm::vec3> alt_look_at_;
+    glm::vec3 camera_lookat_;
+
     ViewOpenGL();
     glm::mat4 GetMVP();
     glm::vec3 GetCameraPos();

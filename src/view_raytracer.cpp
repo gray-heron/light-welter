@@ -1,5 +1,6 @@
 
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 
 #include "config.h"
 #include "view_raytracer.h"
@@ -22,10 +23,25 @@ std::string S(glm::vec4 in)
            std::to_string(in.z) + ", " + std::to_string(in.w) + "}";
 }
 
+// https://stackoverflow.com/questions/34255820/save-sdl-texture-to-file
+void save_texture(std::string filename, SDL_Renderer *renderer, SDL_Texture *texture)
+{
+    SDL_Texture *target = SDL_GetRenderTarget(renderer);
+    SDL_SetRenderTarget(renderer, texture);
+    int width, height;
+    SDL_QueryTexture(texture, NULL, NULL, &width, &height);
+    SDL_Surface *surface = SDL_CreateRGBSurface(0, width, height, 32, 0, 0, 0, 0);
+    SDL_RenderReadPixels(renderer, NULL, surface->format->format, surface->pixels,
+                         surface->pitch);
+    IMG_SavePNG(surface, filename.c_str());
+    SDL_FreeSurface(surface);
+    SDL_SetRenderTarget(renderer, target);
+}
+
 ViewRaytracer::ViewRaytracer()
     : rx_(Config::inst().GetOption<int>("resx")),
       ry_(Config::inst().GetOption<int>("resy")),
-      window_("Raytracer preview", rx_ * 2 + 30, SDL_WINDOWPOS_CENTERED, rx_, ry_, 0),
+      window_("Raytracer preview", rx_ + 30, SDL_WINDOWPOS_CENTERED, rx_, ry_, 0),
       renderer_(window_, -1, SDL_RENDERER_SOFTWARE),
       tex_(renderer_, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, rx_, ry_),
       raytracer_surface_(new uint8_t[rx_ * ry_ * 4]), raytracer_()
@@ -110,5 +126,8 @@ void ViewRaytracer::TakePicture(glm::vec3 camera_pos, glm::mat4 mvp, const Scene
         renderer_.Present();
     }
 
-    Log("RaytracerView").Info() << "Taking picture done.";
+    Log("RaytracerView").Info() << "Taking picture done. Saving to: "
+                                << Config::inst().GetOption<std::string>("target_file");
+    save_texture(Config::inst().GetOption<std::string>("target_file"), renderer_.Get(),
+                 tex_.Get());
 }

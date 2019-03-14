@@ -1,10 +1,16 @@
 
+#include <boost/algorithm/string.hpp>
 #include <boost/variant.hpp>
 #include <cmrc/cmrc.hpp>
+#include <fstream>
 
 #include "config.h"
+#include "scene.h"
 
 CMRC_DECLARE(resources);
+
+extern std::string S(glm::vec4 in);
+extern std::string S(glm::vec3 in);
 
 using std::string;
 
@@ -21,6 +27,13 @@ boost::any ParseValue(const std::type_info &type_id, std::string value)
         return std::stof(value);
     if (type_id == typeid(double))
         return std::stod(value);
+    if (type_id == typeid(glm::vec3))
+    {
+        glm::vec3 ret;
+        std::istringstream iss(value);
+        ASSERT(iss >> ret.x >> ret.y >> ret.z);
+        return ret;
+    }
     if (type_id == typeid(bool))
     {
         if (value == "true")
@@ -54,6 +67,68 @@ void Config::Load(std::string config_path)
         log_.Error() << "Couldn't parse configuration";
 }
 
+std::vector<PointLight> Config::LoadRTC(std::string config_path)
+{
+    std::vector<PointLight> ret;
+    std::ifstream infile(config_path);
+
+    std::string line;
+    int in_int1, in_int2;
+    std::istringstream in_ss;
+
+    ASSERT(std::getline(infile, line));
+    log_.Info() << "RTC comment: \"" << line << "\"";
+
+    ASSERT(std::getline(infile, line));
+    SetParameter("scene",
+                 GetOption<std::string>("rtc_dir") + boost::trim_right_copy(line));
+
+    ASSERT(std::getline(infile, line));
+    SetParameter("target_file",
+                 GetOption<std::string>("rtc_dir") + boost::trim_right_copy(line));
+
+    ASSERT(std::getline(infile, line));
+    SetParameter("recursion", ParseValue(typeid(int), line));
+
+    ASSERT(std::getline(infile, line));
+    in_ss = std::istringstream(line);
+    ASSERT(in_ss >> in_int1 >> in_int2);
+    SetParameter("resx", in_int1);
+    SetParameter("resy", in_int2);
+
+    ASSERT(std::getline(infile, line));
+    SetParameter("camera_pos", ParseValue(typeid(glm::vec3), line));
+
+    ASSERT(std::getline(infile, line));
+    SetParameter("camera_lookat", ParseValue(typeid(glm::vec3), line));
+
+    ASSERT(std::getline(infile, line));
+    SetParameter("camera_up", ParseValue(typeid(glm::vec3), line));
+
+    ASSERT(std::getline(infile, line));
+    SetParameter("fov_factor", ParseValue(typeid(float), line));
+
+    while (std::getline(infile, line))
+    {
+        if (line == "")
+            continue;
+
+        PointLight pl;
+        std::istringstream iss(line);
+        char c;
+        float x, y, z, r, g, b, i;
+
+        ASSERT(iss >> c >> x >> y >> z >> r >> g >> b >> i);
+        ASSERT(c == 'L')
+        log_.Info() << c << x << y << z << r << g << b << i;
+        pl.position = glm::vec3(x, y, z);
+        pl.intensity_rgb = (glm::vec3(r, g, b) / 255.0f) * (i / 100.0f);
+        ret.push_back(pl);
+    }
+
+    return ret;
+}
+
 void Config::Load(int argc, char **argv)
 {
     for (int arg_i = 1; arg_i < argc; arg_i++)
@@ -64,7 +139,21 @@ void Config::Load(int argc, char **argv)
 
         if (NAME_PREFIX != "" && current_argument.find(NAME_PREFIX) != 0)
         {
-            log_.Error() << "Wrong prefix on argument: " << current_argument << "!";
+            log_.Warning() << "Assuming " << current_argument
+                           << " is an RTC config file.";
+
+            std::string::size_type last_slash = current_argument.find_last_of("/");
+            std::string rtc_dir;
+
+            if (last_slash == std::string::npos)
+                rtc_dir = ".";
+            else if (last_slash == 0)
+                rtc_dir = "/";
+            else
+                rtc_dir = current_argument.substr(0, last_slash);
+
+            SetParameter("rtc_file", current_argument);
+            SetParameter("rtc_dir", rtc_dir + "/");
             continue;
         }
 
@@ -113,6 +202,10 @@ void Config::LoadXMLConfig(pugi::xml_document &doc)
                 value = ParseValue(typeid(double), child.text().as_string());
             else if (static_cast<string>(child.attribute("type").as_string()) == "bool")
                 value = ParseValue(typeid(bool), child.text().as_string());
+            else if (static_cast<string>(child.attribute("type").as_string()) == "vec3")
+                value = ParseValue(typeid(glm::vec3), child.text().as_string());
+            else
+                ASSERT(0)
         }
         else
         {
@@ -141,6 +234,8 @@ void Config::DumpSettings()
             value = std::to_string(boost::any_cast<float>(param.second));
         if (type_id == typeid(double))
             value = std::to_string(boost::any_cast<double>(param.second));
+        if (type_id == typeid(glm::vec3))
+            value = S(boost::any_cast<glm::vec3>(param.second));
         if (type_id == typeid(bool))
         {
             if (boost::any_cast<bool>(param.second))

@@ -9,6 +9,7 @@ using std::string;
 
 int main(int argc, char **argv)
 {
+    Scene scene;
     SDL2pp::SDL sdl_(SDL_INIT_VIDEO);
 
     Log log("main");
@@ -18,9 +19,13 @@ int main(int argc, char **argv)
 
     auto config_path = Config::inst().GetOption<std::string>("config");
     if (config_path != "")
-    {
         Config::inst().Load(config_path);
-    }
+
+    auto rtc_path = Config::inst().GetOption<std::string>("rtc_file");
+    if (rtc_path != "")
+        scene.point_lights_ = Config::inst().LoadRTC(rtc_path);
+
+    Config::inst().Load(argc, argv);
 
     LoggingSingleton::inst().SetConsoleVerbosity(
         Config::inst().GetOption<bool>("verbose"));
@@ -33,10 +38,13 @@ int main(int argc, char **argv)
 
     ViewRaytracer vis_rt;
     ViewOpenGL vis_gl;
-    Scene scene;
 
-    scene.ambient_light_ = {0.15f, 0.15f, 0.15f};
-    scene.renderables_.push_back(new Mesh("res/phoenix/phoenix_ugv.md2"));
+    if (scene.point_lights_.size() > 0)
+        scene.ambient_light_ = {0.18f, 0.18f, 0.18f};
+    else
+        scene.ambient_light_ = {1.0f, 1.0f, 1.0f};
+
+    scene.renderables_.push_back(new Mesh(Config::inst().GetOption<string>("scene")));
     // scene.renderables_.push_back(new Mesh("res/view_test/cornell_box.obj"));
     /*
         scene.point_lights_.push_back({
@@ -44,10 +52,10 @@ int main(int argc, char **argv)
             glm::vec3(0.7f, 0.7f, 0.7f),
         });
         */
-    scene.point_lights_.push_back({
-        glm::vec3(100.0f, 220.0f, 100.5f),
-        glm::vec3(0.8f, 0.8f, 0.8f),
-    });
+    // scene.point_lights_.push_back({
+    //    glm::vec3(100.0f, 220.0f, 100.5f),
+    //    glm::vec3(0.8f, 0.8f, 0.8f),
+    //});
 
     bool exit_requested = false;
     while (!exit_requested)

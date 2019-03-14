@@ -1,0 +1,11 @@
+# Test view scene: in OBJ format coords righthanded, CCW faces
+phoenix_ugv.md2
+phoenix2.png
+1
+1280 800
+-0.193994 97.968887 2.002684
+-0.123257 96.971390 2.002684
+0 1 0
+1
+L 100.0 200.5 110.0 255 0 0 100
+L -100.0 200.5 110.0 0 255 0 100

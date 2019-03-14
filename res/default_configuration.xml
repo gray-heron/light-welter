@@ -9,4 +9,14 @@
 
     <threads type="int">4</threads>
     <cols_per_thread type="int">4</cols_per_thread>
+
+    <rtc_file type="string"></rtc_file>
+    <rtc_dir type="string"></rtc_dir>
+
+    <scene type="string"></scene>
+    <target_file type="string"></target_file>
+    <recursion type="int">1</recursion>
+    <camera_pos type="vec3">0 0 0</camera_pos>
+    <camera_lookat type="vec3">1 0 0</camera_lookat>
+    <camera_up type="vec3">0 1 0</camera_up>
 </configuration>

@@ -25,9 +25,13 @@ ViewOpenGL::ViewOpenGL()
     : rx_(Config::inst().GetOption<int>("resx")),
       ry_(Config::inst().GetOption<int>("resy")),
       window_("OpenGL preview", 10, SDL_WINDOWPOS_CENTERED, rx_, ry_, SDL_WINDOW_OPENGL),
-      main_context_(SDL_GL_CreateContext(window_.Get())), camera_pos_(-10.0f, 0, 0),
-      fov_(65.0f), pitch_(0.0f), yaw_(0.0f)
+      main_context_(SDL_GL_CreateContext(window_.Get())),
+      camera_pos_(Config::inst().GetOption<glm::vec3>("camera_pos")), fov_(65.0f),
+      pitch_(0.0f), yaw_(0.0f),
+      alt_look_at_(Config::inst().GetOption<glm::vec3>("camera_lookat") - camera_pos_),
+      camera_lookat_(*alt_look_at_)
 {
+    UpdateCamera();
     SDL_GL_SetSwapInterval(1);
     SDL_GL_ResetAttributes();
 
@@ -53,15 +57,22 @@ ViewOpenGL::ViewOpenGL()
 
 glm::mat4 ViewOpenGL::UpdateCamera()
 {
-    glm::vec4 lookat_h = glm::vec4(1.0f, 0.0f, 0.0f, 1.0);
+    if (!alt_look_at_)
+    {
+        glm::vec4 lookat_h = glm::vec4(1.0f, 0.0f, 0.0f, 1.0);
 
-    glm::mat4 rot = glm::rotate(glm::mat4(1.0f), pitch_, glm::vec3(0, 0, 1));
-    rot = glm::rotate(rot, yaw_, glm::vec3(0, 1, 0));
+        glm::mat4 rot = glm::rotate(glm::mat4(1.0f), yaw_, glm::vec3(0, 1, 0));
+        rot = glm::rotate(rot, pitch_, glm::vec3(0, 0, 1));
 
-    lookat_h = rot * lookat_h;
-    camera_lookat_ = HTN(lookat_h);
+        lookat_h = rot * lookat_h;
+        camera_lookat_ = HTN(lookat_h);
 
-    return glm::lookAt(camera_pos_, camera_pos_ + camera_lookat_, glm::vec3(0, 1, 0));
+        return glm::lookAt(camera_pos_, camera_pos_ + camera_lookat_, glm::vec3(0, 1, 0));
+    }
+    else
+    {
+        return glm::lookAt(camera_pos_, camera_pos_ + *alt_look_at_, glm::vec3(0, 1, 0));
+    }
 }
 
 glm::mat4 ViewOpenGL::GetMVP()
@@ -131,6 +142,9 @@ void ViewOpenGL::HandleKeyDown(SDL_KeyboardEvent key)
     case SDLK_RIGHT:
         yaw_ -= 0.05;
         break;
+    case SDLK_x:
+        alt_look_at_ = boost::none;
+        break;
     case SDLK_w:
         camera_pos_ += camera_lookat_;
         break;
@@ -163,7 +177,8 @@ void ViewOpenGL::HandleKeyDown(SDL_KeyboardEvent key)
         break;
     }
 
-    log_.Info() << "Camera at " << S(camera_pos_) << " " << pitch_ << " " << yaw_;
+    log_.Info() << "Camera at " << S(camera_pos_) << " looking at "
+                << S(camera_pos_ + camera_lookat_);
 }
 
 void ViewOpenGL::HandleMouseKeyDown(SDL_MouseButtonEvent key)

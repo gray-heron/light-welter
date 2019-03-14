@@ -7,6 +7,8 @@
 #include <pugixml.hpp>
 #include <string>
 
+#include "scene.h"
+
 class Config
 {
   private:
@@ -28,6 +30,7 @@ class Config
 
     void Load(std::string config_path);
     void Load(int argc, char **argv);
+    std::vector<PointLight> LoadRTC(std::string config_path);
 
     void SetParameter(std::string name, boost::any val);
     void DumpSettings();
