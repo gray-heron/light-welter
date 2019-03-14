@@ -322,19 +322,15 @@ boost::optional<Intersection> Mesh::Raytrace(const glm::vec3 &source,
                 {
                     Intersection in;
                     in.diffuse = context.ambient;
-                    auto vertex_pos = vertex1.pos_ * barycentric.x;
-                    vertex_pos += vertex2.pos_ * barycentric.y;
-                    vertex_pos += vertex3.pos_ * barycentric.z;
 
                     for (const auto &light : *context.lights_)
                     {
 
-                        if (Raytrace(vertex_pos, light.position - vertex_pos, context,
+                        if (Raytrace(pos, light.position - pos, context,
                                      recursion_depth - 1))
                             continue;
 
-                        auto light_to_intersection =
-                            glm::normalize(light.position - vertex_pos);
+                        auto light_to_intersection = glm::normalize(light.position - pos);
                         auto angle_factor =
                             glm::abs(glm::dot<3, float, glm::qualifier::highp>(
                                 light_to_intersection, glm::normalize(normal)));

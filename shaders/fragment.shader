@@ -1,4 +1,9 @@
-#version 330 core
+#version 310 es
+#undef lowp
+#undef mediump
+#undef highp
+
+precision mediump float;
 
 in vec2 UV;
 out vec3 color;

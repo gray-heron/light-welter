@@ -26,8 +26,9 @@ ViewOpenGL::ViewOpenGL()
       ry_(Config::inst().GetOption<int>("resy")),
       window_("OpenGL preview", 10, SDL_WINDOWPOS_CENTERED, rx_, ry_, SDL_WINDOW_OPENGL),
       main_context_(SDL_GL_CreateContext(window_.Get())),
-      camera_pos_(Config::inst().GetOption<glm::vec3>("camera_pos")), fov_(65.0f),
-      pitch_(0.0f), yaw_(0.0f),
+      camera_pos_(Config::inst().GetOption<glm::vec3>("camera_pos")),
+      fov_(65.0f / Config::inst().GetOption<float>("fov_factor")), pitch_(0.0f),
+      yaw_(0.0f),
       alt_look_at_(Config::inst().GetOption<glm::vec3>("camera_lookat") - camera_pos_),
       camera_lookat_(*alt_look_at_)
 {
@@ -146,22 +147,22 @@ void ViewOpenGL::HandleKeyDown(SDL_KeyboardEvent key)
         alt_look_at_ = boost::none;
         break;
     case SDLK_w:
-        camera_pos_ += camera_lookat_;
+        camera_pos_ += camera_lookat_ * 5.0f;
         break;
     case SDLK_s:
-        camera_pos_ -= camera_lookat_;
+        camera_pos_ -= camera_lookat_ * 5.0f;
         break;
     case SDLK_a:
-        camera_pos_ += camera_lookat_side;
+        camera_pos_ += camera_lookat_side * 5.0f;
         break;
     case SDLK_d:
-        camera_pos_ -= camera_lookat_side;
+        camera_pos_ -= camera_lookat_side * 5.0f;
         break;
     case SDLK_q:
-        camera_pos_ += glm::vec3(0.0, 1.0, 0.0);
+        camera_pos_ += glm::vec3(0.0, 1.0, 0.0) * 5.0f;
         break;
     case SDLK_e:
-        camera_pos_ += glm::vec3(0.0, -1.0, 0.0);
+        camera_pos_ += glm::vec3(0.0, -1.0, 0.0) * 5.0f;
         break;
     case SDLK_KP_PLUS:
         fov_ *= 1.1f;

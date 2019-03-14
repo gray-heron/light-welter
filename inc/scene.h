@@ -6,6 +6,7 @@
 #include <assimp/postprocess.h>
 #include <boost/optional.hpp>
 #include <glm/glm.hpp>
+#include <vector>
 
 struct Intersection
 {

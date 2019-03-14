@@ -1,4 +1,9 @@
-#version 330 core
+#version 310 es
+#undef lowp
+#undef mediump
+#undef highp
+
+precision mediump float;
 
 layout(location = 0) in vec3 pos;
 layout(location = 1) in vec2 uv;
