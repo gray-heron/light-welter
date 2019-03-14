@@ -6,7 +6,7 @@ boost::optional<Intersection> Raytracer::Trace(glm::vec3 source, glm::vec3 targe
                                                const Scene &scene)
 {
     boost::optional<Intersection> intersection_so_far;
-    auto intersection_dist_so_far = std::numeric_limits<float>::infinity();
+    // auto intersection_dist_so_far = std::numeric_limits<float>::infinity();
     OpenGLRenderingContext ctx;
     ctx.lights_ = scene.point_lights_;
     ctx.ambient = scene.ambient_light_;
@@ -15,11 +15,11 @@ boost::optional<Intersection> Raytracer::Trace(glm::vec3 source, glm::vec3 targe
     {
         if (auto intersection = renderable->Raytrace(source, target, ctx, 1))
         {
-            auto intersection_dist = glm::length(source - intersection->position);
+            // auto intersection_dist = glm::length(source - intersection->position);
             // if (intersection_dist < intersection_dist_so_far)
             //{
             intersection_so_far = intersection;
-            intersection_dist_so_far = intersection_dist;
+            // intersection_dist_so_far = intersection_dist;
             // }
             break;
         }

@@ -64,7 +64,7 @@ void ViewRaytracer::TakePicture(glm::vec3 camera_pos, glm::mat4 mvp, const Scene
     auto rt_func = [&](int x_start, int cols) -> void {
         for (int x = x_start; x < x_start + cols; x += 1)
         {
-            for (int y = 0; y < ry_; y += 1)
+            for (unsigned int y = 0; y < ry_; y += 1)
             {
                 float xr = (float(x) - float(rx_ / 2)) / (float(rx_ / 2));
                 float yr = (float(y) - float(ry_ / 2)) / (float(ry_ / 2));
@@ -107,7 +107,7 @@ void ViewRaytracer::TakePicture(glm::vec3 camera_pos, glm::mat4 mvp, const Scene
     auto threads_num = Config::inst().GetOption<int>("threads");
     auto cols_per_thread = Config::inst().GetOption<int>("cols_per_thread");
 
-    for (int x = 0; x < rx_; x += threads_num * cols_per_thread)
+    for (unsigned int x = 0; x < rx_; x += threads_num * cols_per_thread)
     {
         std::vector<std::thread> threads;
         for (int t = 0; t < threads_num; t++)

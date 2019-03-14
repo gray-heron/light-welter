@@ -241,7 +241,7 @@ void Mesh::RenderByOpenGL(OpenGLRenderingContext context, aiNode *node)
     glEnableVertexAttribArray(1);
     glEnableVertexAttribArray(2);
 
-    for (int i = 0; i < node->mNumMeshes; i++)
+    for (unsigned int i = 0; i < node->mNumMeshes; i++)
     {
         auto &obj = m_Entries[node->mMeshes[i]];
 
@@ -276,7 +276,7 @@ void Mesh::RenderByOpenGL(OpenGLRenderingContext context, aiNode *node)
     glDisableVertexAttribArray(1);
     glDisableVertexAttribArray(2);
 
-    for (int i = 0; i < node->mNumChildren; i++)
+    for (unsigned int i = 0; i < node->mNumChildren; i++)
     {
         RenderByOpenGL(context, node->mChildren[i]);
     }
@@ -299,7 +299,7 @@ boost::optional<Intersection> Mesh::Raytrace(const glm::vec3 &source,
         const auto &vertices = obj.first.vertices_;
         const auto &indices = obj.first.indices_;
 
-        for (int i = 0; i < indices.size(); i += 3)
+        for (unsigned int i = 0; i < indices.size(); i += 3)
         {
             auto vertex1 = vertices[indices[i + 0]];
             auto vertex2 = vertices[indices[i + 1]];
