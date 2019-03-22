@@ -33,8 +33,7 @@ include_directories(${Boost_INCLUDE_DIRS})
 
 ExternalProject_Add(sdl2-dependency
   URL https://github.com/libSDL2pp/libSDL2pp/archive/0.16.0.tar.gz
-  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/dependencies -DSDL2PP_WITH_MIXER=OFF -DSDL2PP_WITH_IMAGE=ON -DSDL2PP_STATIC=ON
-)
+  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/dependencies -DSDL2PP_WITH_MIXER=OFF -DSDL2PP_WITH_IMAGE=ON -DSDL2PP_STATIC=ON -DSDL2PP_WITH_EXAMPLES=OFF SDL2PP_WITH_TESTS=OFF SDL2PP_ENABLE_LIVE_TESTS=OFF)
 
 ExternalProject_Add(pugixml-dependency
   URL https://github.com/zeux/pugixml/releases/download/v1.9/pugixml-1.9.tar.gz
