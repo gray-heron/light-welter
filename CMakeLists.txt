@@ -33,11 +33,16 @@ include_directories(${Boost_INCLUDE_DIRS})
 
 ExternalProject_Add(sdl2-dependency
   URL https://github.com/libSDL2pp/libSDL2pp/archive/0.16.0.tar.gz
-  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/dependencies -DSDL2PP_WITH_MIXER=OFF -DSDL2PP_WITH_IMAGE=ON -DSDL2PP_STATIC=ON -DSDL2PP_WITH_EXAMPLES=OFF SDL2PP_WITH_TESTS=OFF SDL2PP_ENABLE_LIVE_TESTS=OFF)
+  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/dependencies -DSDL2PP_WITH_MIXER=OFF -DSDL2PP_WITH_IMAGE=ON -DSDL2PP_STATIC=OFF -DSDL2PP_WITH_EXAMPLES=OFF -DSDL2PP_WITH_TESTS=OFF -DSDL2PP_ENABLE_LIVE_TESTS=OFF)
 
 ExternalProject_Add(pugixml-dependency
   URL https://github.com/zeux/pugixml/releases/download/v1.9/pugixml-1.9.tar.gz
-  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/dependencies -DSPDLOG_BUILD_EXAMPLES=0 -DSPDLOG_BUILD_BENCH=0 -DSPDLOG_BUILD_TESTING=0 -DSPDLOG_BUILD_TESTING=0
+  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/dependencies
+)
+
+ExternalProject_Add(spdlog-dependency
+  URL https://github.com/gabime/spdlog/archive/v1.1.0.tar.gz
+  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/dependencies -DSPDLOG_BUILD_EXAMPLES=OFF -DSPDLOG_BUILD_BENCH=OFF -DSPDLOG_BUILD_TESTING=OFF -DSPDLOG_BUILD_TESTING=OFF
 )
 
 find_package(SDL2 REQUIRED)
@@ -45,7 +50,6 @@ PKG_SEARCH_MODULE(SDL2IMAGE REQUIRED SDL2_image>=2.0.0)
 find_package(OpenGL REQUIRED)                                                          
 find_package(GLEW REQUIRED)
 find_package(assimp REQUIRED)
-find_package(spdlog)
 find_package(glm REQUIRED)
 
 include_directories(${GLM_INCLUDE_DIRS})
@@ -90,7 +94,7 @@ set(SRCS_NOMAIN
 add_library (${PROJECT_NAME} STATIC ${SRCS_NOMAIN})
 
 target_link_libraries(${PROJECT_NAME}
-  ${Boost_LIBRARIES} pugixml SDL2pp ${SDL2IMAGE_LIBRARIES} ${SDL2_LIBRARIES} resources ${CMAKE_THREAD_LIBS_INIT} ${ASSIMP_LIBRARIES}
+  ${Boost_LIBRARIES} pugixml SDL2pp resources ${SDL2IMAGE_LIBRARIES} ${SDL2_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${ASSIMP_LIBRARIES}
 )
 
 target_link_libraries(${PROJECT_NAME} ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES}) 
@@ -100,6 +104,7 @@ target_link_libraries(demo_app ${PROJECT_NAME})
 
 add_dependencies(${PROJECT_NAME} sdl2-dependency)
 add_dependencies(${PROJECT_NAME} pugixml-dependency)
+add_dependencies(${PROJECT_NAME} spdlog-dependency)
 
 # ==============================================================================
 # tests

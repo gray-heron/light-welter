@@ -1,7 +1,7 @@
 
 #include <iostream>
-#include <spdlog/sinks/base_sink.h>
-#include <spdlog/sinks/stdout_sinks.h>
+#include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
 #include "config.h"
@@ -11,8 +11,7 @@ LoggingSingleton::LoggingSingleton()
 {
     try
     {
-        auto console_sink = std::make_shared<spdlog::sinks::ansicolor_stdout_sink_mt>();
-
+        auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
         console_sink->set_level(spdlog::level::info);
         // console_sink->set_pattern("[multi_sink_example] [%^%l%$] %v");
         sinks_.push_back(console_sink);
@@ -30,7 +29,7 @@ void LoggingSingleton::SetConsoleVerbosity(bool verbose)
 
 void LoggingSingleton::AddLogFile(std::string name)
 {
-    auto file_sink = std::make_shared<spdlog::sinks::simple_file_sink_mt>(name, true);
+    auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(name, true);
 
     file_sink->set_level(spdlog::level::trace);
 
