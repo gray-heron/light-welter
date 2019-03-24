@@ -45,14 +45,19 @@ ExternalProject_Add(spdlog-dependency
   CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/dependencies -DSPDLOG_BUILD_EXAMPLES=OFF -DSPDLOG_BUILD_BENCH=OFF -DSPDLOG_BUILD_TESTING=OFF -DSPDLOG_BUILD_TESTING=OFF
 )
 
+ExternalProject_Add(glm-dependency
+  URL https://github.com/g-truc/glm/releases/download/0.9.9.4/glm-0.9.9.4.zip
+  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/dependencies -DGLM_TEST_ENABLE=OFF -DBUILD_SHARED_LIBS=OFF
+)
+
+
+
 find_package(SDL2 REQUIRED)
 PKG_SEARCH_MODULE(SDL2IMAGE REQUIRED SDL2_image>=2.0.0)
 find_package(OpenGL REQUIRED)                                                          
 find_package(GLEW REQUIRED)
 find_package(assimp REQUIRED)
-find_package(glm REQUIRED)
 
-include_directories(${GLM_INCLUDE_DIRS})
 include_directories(${SDL2_INCLUDE_DIRS})
 include_directories(${ASSIMP_INCLUDE_DIRS})
 
@@ -105,6 +110,7 @@ target_link_libraries(demo_app ${PROJECT_NAME})
 add_dependencies(${PROJECT_NAME} sdl2-dependency)
 add_dependencies(${PROJECT_NAME} pugixml-dependency)
 add_dependencies(${PROJECT_NAME} spdlog-dependency)
+add_dependencies(${PROJECT_NAME} glm-dependency)
 
 # ==============================================================================
 # tests

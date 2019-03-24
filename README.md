@@ -3,7 +3,7 @@
 ## Installation
 
 ### Dependencies
- - System packages (as named in Debian): libassimp-dev libglew-dev libsdl2-dev libsdl2-image-dev libspdlog-dev cmake
+ - System packages (as named in Debian): libassimp-dev libglew-dev libsdl2-dev libsdl2-ttf-dev libsdl2-image-dev libboost-all-dev cmake
  - OpenGL ES 3.10 capable driver
  - C++14 capable compiler
  - internet connection (cmake will download some other dependencies)
@@ -68,3 +68,5 @@ For now please only use "standard" resolutions, i.e. 640x480 instead of 600x400.
 >spdlog
 
 >pugixml
+
+>GLM
