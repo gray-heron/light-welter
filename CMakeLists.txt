@@ -50,8 +50,6 @@ ExternalProject_Add(glm-dependency
   CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/dependencies -DGLM_TEST_ENABLE=OFF -DBUILD_SHARED_LIBS=OFF
 )
 
-
-
 find_package(SDL2 REQUIRED)
 PKG_SEARCH_MODULE(SDL2IMAGE REQUIRED SDL2_image>=2.0.0)
 find_package(OpenGL REQUIRED)                                                          
@@ -92,6 +90,7 @@ set(SRCS_NOMAIN
   inc/shader.h
   inc/mesh.h
   inc/texture.h
+  inc/raytracer.h
   inc/view_raytracer.h
   inc/view_opengl.h
   )

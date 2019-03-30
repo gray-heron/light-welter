@@ -11,7 +11,7 @@
 #include <string>
 
 #include "log.h"
-#include "scene.h"
+#include "rendereable.h"
 #include "texture.h"
 
 struct Vertex
@@ -24,16 +24,6 @@ struct Vertex
 class Mesh : public Renderable
 {
   public:
-    Mesh(std::string filename);
-    ~Mesh();
-
-    void RenderByOpenGL(OpenGLRenderingContext context, aiNode *node = nullptr) override;
-    boost::optional<Intersection> Raytrace(const glm::vec3 &source,
-                                           const glm::vec3 &target,
-                                           const OpenGLRenderingContext &context,
-                                           int recursion_depth) override;
-
-  private:
     struct MeshEntry
     {
         MeshEntry(std::vector<Vertex> &&Vertices, std::vector<glm::u32> &&Indices,
@@ -49,12 +39,22 @@ class Mesh : public Renderable
         const std::vector<glm::u32> indices_;
     };
 
-    bool InitFromScene(const aiScene *pScene, const std::string &Filename);
-    MeshEntry InitMesh(const aiMesh *mesh);
-    void InitMaterial(int index, const aiMaterial *material, std::string dir);
+    Mesh(std::string filename);
+    virtual ~Mesh();
+
+    void RenderByOpenGL(OpenGLRenderingContext context, aiNode *node = nullptr) override;
+    boost::optional<Intersection> Raytrace(const glm::vec3 &source,
+                                           const glm::vec3 &target,
+                                           const RaytracingContext &context,
+                                           int recursion_depth) override;
 
     std::unique_ptr<boost::optional<Texture>[]> materials_;
     std::vector<std::pair<MeshEntry, boost::optional<Texture> &>> m_Entries;
+
+  private:
+    bool InitFromScene(const aiScene *pScene, const std::string &Filename);
+    MeshEntry InitMesh(const aiMesh *mesh);
+    void InitMaterial(int index, const aiMaterial *material, std::string dir);
 
     const aiScene *scene_;
     Assimp::Importer Importer;

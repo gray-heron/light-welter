@@ -100,10 +100,8 @@ void ViewOpenGL::Render(const Scene &scene)
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    for (auto renderable : scene.renderables_)
-    {
-        renderable->RenderByOpenGL(rendering_context_);
-    }
+    if (scene.mesh_)
+        scene.mesh_->RenderByOpenGL(rendering_context_);
 
     // Swap buffers
     SDL_GL_SwapWindow(window_.Get());

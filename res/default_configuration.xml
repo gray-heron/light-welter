@@ -13,6 +13,8 @@
     <rtc_file type="string"></rtc_file>
     <rtc_dir type="string"></rtc_dir>
 
+    <max_triangles_in_kdleaf type="int">16</max_triangles_in_kdleaf>
+
     <scene type="string"></scene>
     <target_file type="string"></target_file>
     <recursion type="int">1</recursion>

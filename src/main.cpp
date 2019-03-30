@@ -44,7 +44,7 @@ int main(int argc, char **argv)
     else
         scene.ambient_light_ = {1.0f, 1.0f, 1.0f};
 
-    scene.renderables_.push_back(new Mesh(Config::inst().GetOption<string>("scene")));
+    scene.mesh_ = std::make_unique<Mesh>(Config::inst().GetOption<string>("scene"));
     // scene.renderables_.push_back(new Mesh("res/view_test/cornell_box.obj"));
     /*
         scene.point_lights_.push_back({
