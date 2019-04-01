@@ -65,14 +65,18 @@ Mesh::MeshEntry::~MeshEntry()
 }
 
 Mesh::Mesh(std::string filename)
+    : lower_bound_(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(),
+                   std::numeric_limits<float>::max()),
+      upper_bound_(std::numeric_limits<float>::min(), std::numeric_limits<float>::min(),
+                   std::numeric_limits<float>::min())
 {
-
-    const aiScene *pScene = Importer.ReadFile(
+    const aiScene *pScene = importer_.ReadFile(
         filename.c_str(), aiProcess_Triangulate | aiProcess_GenSmoothNormals |
                               aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices);
 
-    ASSERT(pScene, "Error parsing " + filename + " : " + Importer.GetErrorString());
-    ASSERT(InitFromScene(pScene, filename));
+    STRONG_ASSERT(pScene,
+                  "Error parsing " + filename + " : " + importer_.GetErrorString());
+    STRONG_ASSERT(InitFromScene(pScene, filename));
 }
 
 Mesh::~Mesh() {}
@@ -134,6 +138,14 @@ Mesh::MeshEntry Mesh::InitMesh(const aiMesh *mesh)
                     glm::vec2(pTexCoord->x, pTexCoord->y),
                     glm::vec3(pNormal->x, pNormal->y, pNormal->z)};
 
+        for (int i = 0; i < 3; i++)
+        {
+            if (v.pos_[i] < lower_bound_[i])
+                lower_bound_[i] = v.pos_[i];
+            else if (v.pos_[i] > upper_bound_[i])
+                upper_bound_[i] = v.pos_[i];
+        }
+
         Vertices.push_back(v);
     }
 
@@ -177,7 +189,7 @@ void Mesh::InitMaterial(int index, const aiMaterial *material, std::string dir)
     }
 
     // fixme
-    ASSERT(0);
+    STRONG_ASSERT(0);
     while (1)
         ;
 }
@@ -233,3 +245,6 @@ void Mesh::RenderByOpenGL(OpenGLRenderingContext context, aiNode *node)
         RenderByOpenGL(context, node->mChildren[i]);
     }
 }
+
+glm::vec3 Mesh::GetUpperBound() { return upper_bound_; }
+glm::vec3 Mesh::GetLowerBound() { return lower_bound_; }

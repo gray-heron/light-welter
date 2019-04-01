@@ -20,7 +20,7 @@ glm::vec3 GetPixel(SDL_Surface *surface, int x, int y)
         break;
 
     case 2:
-        ASSERT(0);
+        STRONG_ASSERT(0);
         break;
 
     case 3:
@@ -34,7 +34,7 @@ glm::vec3 GetPixel(SDL_Surface *surface, int x, int y)
         break;
 
     default:
-        ASSERT(0);
+        STRONG_ASSERT(0);
         return glm::vec3();
     }
 }
@@ -49,7 +49,7 @@ Texture::Texture(GLenum texture_target, glm::vec3 diff_color,
     if (!boost::filesystem::exists(file_name))
         Log("TextureReader").Error() << "Texture: " << file_name << " does not exist!";
 
-    ASSERT(surface_.GetSize().x > 0);
+    STRONG_ASSERT(surface_.GetSize().x > 0);
 
     glGenTextures(1, &texture_obj_);
     glBindTexture(texture_target, texture_obj_);
@@ -65,7 +65,7 @@ Texture::Texture(GLenum texture_target, glm::vec3 diff_color,
         break;
 
     default:
-        ASSERT(0);
+        STRONG_ASSERT(0);
     }
 
     glBindTexture(texture_target_, texture_obj_);

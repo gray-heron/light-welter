@@ -43,13 +43,12 @@ class Mesh : public Renderable
     virtual ~Mesh();
 
     void RenderByOpenGL(OpenGLRenderingContext context, aiNode *node = nullptr) override;
-    boost::optional<Intersection> Raytrace(const glm::vec3 &source,
-                                           const glm::vec3 &target,
-                                           const RaytracingContext &context,
-                                           int recursion_depth) override;
 
     std::unique_ptr<boost::optional<Texture>[]> materials_;
     std::vector<std::pair<MeshEntry, boost::optional<Texture> &>> m_Entries;
+
+    glm::vec3 GetUpperBound();
+    glm::vec3 GetLowerBound();
 
   private:
     bool InitFromScene(const aiScene *pScene, const std::string &Filename);
@@ -57,7 +56,9 @@ class Mesh : public Renderable
     void InitMaterial(int index, const aiMaterial *material, std::string dir);
 
     const aiScene *scene_;
-    Assimp::Importer Importer;
+    Assimp::Importer importer_;
+    glm::vec3 lower_bound_;
+    glm::vec3 upper_bound_;
 
     Log log_{"Mesh"};
 };

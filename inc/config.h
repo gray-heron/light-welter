@@ -38,10 +38,10 @@ class Config
     template <typename T> T GetOption(std::string name)
     {
         auto val = params_.find(name);
-        ASSERT(val != params_.end(), "No such option: " + name);
-        ASSERT(val->second.type() == typeid(T),
-               "Requested option " + name + " with type " + typeid(T).name() +
-                   " but got " + val->second.type().name());
+        STRONG_ASSERT(val != params_.end(), "No such option: " + name);
+        STRONG_ASSERT(val->second.type() == typeid(T),
+                      "Requested option " + name + " with type " + typeid(T).name() +
+                          " but got " + val->second.type().name());
         return boost::any_cast<T>(val->second);
     }
 };

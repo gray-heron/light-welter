@@ -6,6 +6,7 @@
 #include <boost/optional/optional.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <inttypes.h>
 
 #include "log.h"
 #include "mesh.h"
@@ -27,13 +28,12 @@ class ViewRaytracer
     SDL2pp::Texture tex_;
 
     uint8_t *raytracer_surface_;
-
-    Raytracer raytracer_;
+    Log log_{"ViewRaytracer"};
 
   public:
-    ViewRaytracer();
-
+    ViewRaytracer(Scene &&scene);
     void TakePicture(glm::vec3 camera_pos, glm::mat4 mvp, const Scene &scene);
     void Render();
-    Log log_{"ViewRaytracer"};
+
+    Raytracer raytracer_;
 };

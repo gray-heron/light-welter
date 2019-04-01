@@ -28,7 +28,7 @@ GLuint LoadShaders(std::string vertex_shader_path, std::string fragment_shader_p
     std::string VertexShaderCode;
     std::ifstream VertexShaderStream(vertex_shader_path, std::ios::in);
 
-    ASSERT(VertexShaderStream.is_open(), "Cannot open vertex shader file!");
+    STRONG_ASSERT(VertexShaderStream.is_open(), "Cannot open vertex shader file!");
 
     {
         std::stringstream sstr;
@@ -41,7 +41,7 @@ GLuint LoadShaders(std::string vertex_shader_path, std::string fragment_shader_p
     std::string FragmentShaderCode;
     std::ifstream FragmentShaderStream(fragment_shader_path, std::ios::in);
 
-    ASSERT(FragmentShaderStream.is_open(), "Cannot open vertex shader file!");
+    STRONG_ASSERT(FragmentShaderStream.is_open(), "Cannot open vertex shader file!");
 
     {
         std::stringstream sstr;
@@ -114,7 +114,7 @@ GLuint LoadShaders(std::string vertex_shader_path, std::string fragment_shader_p
         log.Error() << "An error has occured during fragment shader linking: "
                     << error_msg;
 
-        ASSERT(0);
+        STRONG_ASSERT(0);
     }
 
     glDetachShader(ProgramID, VertexShaderID);

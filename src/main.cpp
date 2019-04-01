@@ -1,3 +1,4 @@
+#include <csignal>
 #include <stdio.h>
 
 #include "config.h"
@@ -36,7 +37,6 @@ int main(int argc, char **argv)
 
     //====================
 
-    ViewRaytracer vis_rt;
     ViewOpenGL vis_gl;
 
     if (scene.point_lights_.size() > 0)
@@ -57,10 +57,12 @@ int main(int argc, char **argv)
     //    glm::vec3(0.8f, 0.8f, 0.8f),
     //});
 
+    ViewRaytracer vis_rt(std::move(scene));
+
     bool exit_requested = false;
     while (!exit_requested)
     {
-        vis_gl.Render(scene);
+        vis_gl.Render(vis_rt.raytracer_.scene_);
         vis_rt.Render();
 
         while (auto action = vis_gl.DequeueAction())
@@ -73,8 +75,22 @@ int main(int argc, char **argv)
             case ViewOpenGL::TakePicture:
                 vis_rt.TakePicture(vis_gl.GetCameraPos(), vis_gl.GetMVP(), scene);
                 break;
+            case ViewOpenGL::OneShot:
+            {
+                auto inv_mvp = glm::inverse(vis_gl.GetMVP());
+                glm::vec4 ray_r(0.0f, 0.0f, 1.0f, 1.0f);
+
+                auto target = inv_mvp * ray_r;
+                auto intersection = vis_rt.raytracer_.Trace(vis_gl.GetCameraPos(),
+                                                            glm::normalize(target));
+                if (intersection)
+                    log.Info() << "Oneshot hit!";
+                else
+                    log.Info() << "Oneshot miss!";
+            }
+            break;
             default:
-                ASSERT(0, "Action not implemented!")
+                STRONG_ASSERT(0, "Action not implemented!")
             }
         }
     }

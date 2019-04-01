@@ -19,7 +19,8 @@ class ViewOpenGL
     enum Action
     {
         Exit,
-        TakePicture
+        TakePicture,
+        OneShot
     };
 
   private:

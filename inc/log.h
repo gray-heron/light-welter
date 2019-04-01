@@ -57,12 +57,12 @@ class Log
     std::string module_;
 
     std::weak_ptr<spdlog::logger> handle_;
-    std::shared_ptr<spdlog::logger> GetHandle();
+    std::shared_ptr<spdlog::logger> GetHandle() const;
 
   public:
     Log(std::string module_name);
-    LogStream Debug();
-    LogStream Info();
-    LogStream Warning();
-    LogStream Error();
+    LogStream Debug() const;
+    LogStream Info() const;
+    LogStream Warning() const;
+    LogStream Error() const;
 };

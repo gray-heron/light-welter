@@ -38,13 +38,13 @@ void save_texture(std::string filename, SDL_Renderer *renderer, SDL_Texture *tex
     SDL_SetRenderTarget(renderer, target);
 }
 
-ViewRaytracer::ViewRaytracer()
+ViewRaytracer::ViewRaytracer(Scene &&scene)
     : rx_(Config::inst().GetOption<int>("resx")),
       ry_(Config::inst().GetOption<int>("resy")),
       window_("Raytracer preview", rx_ + 30, SDL_WINDOWPOS_CENTERED, rx_, ry_, 0),
       renderer_(window_, -1, SDL_RENDERER_SOFTWARE),
       tex_(renderer_, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, rx_, ry_),
-      raytracer_surface_(new uint8_t[rx_ * ry_ * 4]), raytracer_()
+      raytracer_surface_(new uint8_t[rx_ * ry_ * 4]), raytracer_(std::move(scene))
 {
 }
 
@@ -71,8 +71,7 @@ void ViewRaytracer::TakePicture(glm::vec3 camera_pos, glm::mat4 mvp, const Scene
                 glm::vec4 ray_r(xr, -yr, 1, 1);
 
                 auto target = inv_mvp * ray_r;
-                auto intersection =
-                    raytracer_.Trace(camera_pos, glm::normalize(target), scene);
+                auto intersection = raytracer_.Trace(camera_pos, glm::normalize(target));
 
                 uint8_t b;
                 uint8_t g;

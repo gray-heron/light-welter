@@ -37,7 +37,7 @@ ViewOpenGL::ViewOpenGL()
     SDL_GL_ResetAttributes();
 
     glewExperimental = GL_TRUE;
-    ASSERT(glewInit() == GLEW_OK);
+    STRONG_ASSERT(glewInit() == GLEW_OK);
 
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
@@ -173,6 +173,9 @@ void ViewOpenGL::HandleKeyDown(SDL_KeyboardEvent key)
         break;
     case SDLK_RETURN:
         action_queue_.push(Action::TakePicture);
+        break;
+    case SDLK_z:
+        action_queue_.push(Action::OneShot);
         break;
     }
 

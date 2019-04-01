@@ -18,7 +18,7 @@
     if (!(x))                                                                            \
         throw AssertionFailedException(__FILE__, __LINE__);
 
-#define ASSERT(...) __ASSERT_SWITCH(__VA_ARGS__)(__VA_ARGS__)
+#define STRONG_ASSERT(...) __ASSERT_SWITCH(__VA_ARGS__)(__VA_ARGS__)
 
 class Exception : public std::exception
 {

@@ -9,14 +9,9 @@
 #include "mesh.h"
 #include "scene.h"
 
-/*
- To maximally reduce the size of the kd-tree node, there is no explicit
- leaf\node flag. Since both have normally unsigned integer on the first
- 4 bytes, leafs have their one negated.
-*/
-
 struct KDLeaf
 {
+    // See Implementation Note 1
     int32_t neg_first_index_;
     int32_t indices_no_;
 };
@@ -30,13 +25,6 @@ struct KDNode
 union KDElement {
     KDLeaf leaf_;
     KDNode node_;
-    /*
-        // Construct leaf, watch out for the int\float abiguity
-        KDElement(int32_t first_index, int32_t indices_no);
-
-        // Construct node
-        KDElement(int32_t first_child, float division);
-        */
 };
 
 struct TriangleIndices
@@ -45,25 +33,27 @@ struct TriangleIndices
     uint16_t object_id_;
 
     TriangleIndices(uint32_t t1, uint32_t t2, uint32_t t3, uint16_t object_id)
-        : t1_(t1), t2_(t2), t3_(t3)
+        : t1_(t1), t2_(t2), t3_(t3), object_id_(object_id)
     {
     }
 };
 
 class Raytracer
 {
-    Scene scene_;
     std::array<std::function<bool(const TriangleIndices &i1, const TriangleIndices &i2)>,
                3>
-        indices_sorters_;
-    const int max_triangles_in_kdleaf_;
+        indices_comparers_min_, indices_comparers_max_;
 
-    bool CompareIndicesX(const TriangleIndices &i1, const TriangleIndices &i2) const;
-    bool CompareIndicesY(const TriangleIndices &i1, const TriangleIndices &i2) const;
-    bool CompareIndicesZ(const TriangleIndices &i1, const TriangleIndices &i2) const;
+    const int max_triangles_in_kdleaf_;
+    const int kd_max_depth_;
+
+    bool CompareIndices(int dim, bool min, const TriangleIndices &i1,
+                        const TriangleIndices &i2) const;
+    bool CompareIndicesToAAPlane(int dim, bool min, const TriangleIndices &i1,
+                                 float plane) const;
 
     // returns the position in the kd_tree_
-    void KDTreeConstructStep(int position,
+    void KDTreeConstructStep(unsigned int position,
                              std::vector<TriangleIndices>::iterator table_start,
                              std::vector<TriangleIndices>::iterator table_end,
                              std::vector<TriangleIndices> &carry, int current_depth);
@@ -79,6 +69,8 @@ class Raytracer
     Log log_{"Raytracer"};
 
     std::vector<KDElement> kd_tree_;
+    std::vector<TriangleIndices> indices_;
+
     int kd_elements_ = 0;
     int total_depth_ = 0;
     int leafs_ = 0;
@@ -86,8 +78,9 @@ class Raytracer
   public:
     Raytracer(Scene &&scene);
 
-    boost::optional<Intersection> Trace(glm::vec3 source, glm::vec3 target,
-                                        const Scene &scene) const;
+    boost::optional<Intersection>
+    Trace(glm::vec3 source, glm::vec3 target,
+          boost::optional<uint32_t> max_depth = boost::none) const;
 
-    std::vector<TriangleIndices> indices_;
+    const Scene scene_;
 };

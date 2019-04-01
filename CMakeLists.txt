@@ -1,3 +1,8 @@
+
+# ==============================================================================
+# cmake setup
+# ==============================================================================
+
 cmake_minimum_required(VERSION 3.0)
 project(light-welter)
 
@@ -8,6 +13,8 @@ include(FindPkgConfig)
 
 enable_testing()
 
+# ==============================================================================
+# compiler setup
 # ==============================================================================
 
 set(CMAKE_CXX_STANDARD 14)
@@ -22,9 +29,7 @@ include_directories(${CMAKE_BINARY_DIR}/gen)
 include_directories(${CMAKE_BINARY_DIR}/dependencies/include)
 
 # ==============================================================================
-
-set(pugixml_DIR /usr/share/libpugixml-dev/cmake/)
-
+# external dependencies
 # ==============================================================================
 
 find_package(Threads)
@@ -63,7 +68,6 @@ link_directories(${ASSIMP_LIBRARY_DIRS})
 link_directories(${GLM_LIBRARY_DIRS})
 link_directories(${CMAKE_BINARY_DIR}/dependencies/lib)
 
-
 # ==============================================================================
 # resources
 # ==============================================================================
@@ -71,7 +75,13 @@ link_directories(${CMAKE_BINARY_DIR}/dependencies/lib)
 cmrc_add_resource_library(resources res/default_configuration.xml)
 
 # ==============================================================================
-# cmake targets
+# workarounds
+# ==============================================================================
+
+add_compile_options(-DGLM_FORCE_XYZW_ONLY)
+
+# ==============================================================================
+# build config
 # ==============================================================================
 
 set(SRCS_NOMAIN 

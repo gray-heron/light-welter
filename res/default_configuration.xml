@@ -10,10 +10,11 @@
     <threads type="int">4</threads>
     <cols_per_thread type="int">4</cols_per_thread>
 
-    <rtc_file type="string"></rtc_file>
-    <rtc_dir type="string"></rtc_dir>
+    <rtc_file type="string">res/phoenix/phoenix.rtc</rtc_file>
+    <rtc_dir type="string">res/phoenix/</rtc_dir>
 
-    <max_triangles_in_kdleaf type="int">16</max_triangles_in_kdleaf>
+    <kdtree_max_triangles_in_leaf type="int">16</kdtree_max_triangles_in_leaf>
+    <kdtree_max_depth type="int">12</kdtree_max_depth>
 
     <scene type="string"></scene>
     <target_file type="string"></target_file>
@@ -21,4 +22,5 @@
     <camera_pos type="vec3">0 0 0</camera_pos>
     <camera_lookat type="vec3">1 0 0</camera_lookat>
     <camera_up type="vec3">0 1 0</camera_up>
+    <fov_factor type="float">1</fov_factor>
 </configuration>
