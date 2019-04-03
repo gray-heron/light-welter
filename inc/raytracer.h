@@ -38,6 +38,21 @@ struct TriangleIndices
     }
 };
 
+struct TriangleIntersection
+{
+    TriangleIntersection(float dist, glm::vec3 global_pos, glm::vec3 barycentric_pos,
+                         glm::vec3 normal)
+        : dist_(dist), global_pos_(global_pos), barycentric_pos_(barycentric_pos),
+          normal_(normal)
+    {
+    }
+
+    float dist_;
+    glm::vec3 global_pos_;
+    glm::vec3 barycentric_pos_;
+    glm::vec3 normal_;
+};
+
 class Raytracer
 {
     std::array<std::function<bool(const TriangleIndices &i1, const TriangleIndices &i2)>,
@@ -58,13 +73,15 @@ class Raytracer
                              std::vector<TriangleIndices>::iterator table_end,
                              std::vector<TriangleIndices> &carry, int current_depth);
 
-    boost::optional<TriangleIndices>
+    boost::optional<std::pair<TriangleIntersection, TriangleIndices>>
     TraverseKdTree(glm::vec3 lower_bound, glm::vec3 upper_bound, const glm::vec3 &origin,
                    const glm::vec3 &direction, const KDElement &current_node,
                    int current_depth = 0) const;
 
-    boost::optional<TriangleIndices> CheckKdLeaf(glm::vec3 origin, glm::vec3 direction,
-                                                 const KDLeaf &leaf) const;
+    boost::optional<std::pair<TriangleIntersection, TriangleIndices>>
+    CheckKdLeaf(const glm::vec3 &lower_bound, const glm::vec3 &upper_bound,
+                const glm::vec3 &origin, const glm::vec3 &direction,
+                const KDLeaf &leaf) const;
 
     Log log_{"Raytracer"};
 

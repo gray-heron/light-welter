@@ -10,8 +10,11 @@
     <threads type="int">4</threads>
     <cols_per_thread type="int">4</cols_per_thread>
 
-    <rtc_file type="string">res/phoenix/phoenix.rtc</rtc_file>
-    <rtc_dir type="string">res/phoenix/</rtc_dir>
+<!--    <rtc_file type="string">res/phoenix/phoenix.rtc</rtc_file>
+    <rtc_dir type="string">res/phoenix/</rtc_dir> -->
+
+    <rtc_file type="string">res/view_test/cornell.rtc</rtc_file>
+    <rtc_dir type="string">res/view_test/</rtc_dir>
 
     <kdtree_max_triangles_in_leaf type="int">16</kdtree_max_triangles_in_leaf>
     <kdtree_max_depth type="int">12</kdtree_max_depth>

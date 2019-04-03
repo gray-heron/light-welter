@@ -9,9 +9,11 @@ using namespace std::placeholders;
 extern std::string S(glm::vec4 in);
 extern std::string S(glm::vec3 in);
 
+const float EPSILON = 0.0001f;
+glm::vec3 EPSILON3 = glm::vec3(EPSILON, EPSILON, EPSILON);
+
 // https://gamedev.stackexchange.com/questions/133109/m%C3%B6ller-trumbore-false-positive
-// dist, intersection pos, barycentric, normal
-boost::optional<std::tuple<float, glm::vec3, glm::vec3, glm::vec3>>
+boost::optional<TriangleIntersection>
 RayIntersectsTriangle(const glm::vec3 orig, const glm::vec3 ray, const glm::vec3 vert0,
                       const glm::vec3 vert1, const glm::vec3 vert2)
 
@@ -23,9 +25,7 @@ RayIntersectsTriangle(const glm::vec3 orig, const glm::vec3 ray, const glm::vec3
     const glm::vec3 pvec = glm::cross(ray, edge2);
     const float det = glm::dot(edge1, pvec);
 
-    const float epsilon = 32.0f * std::numeric_limits<float>::epsilon();
-
-    if (det > -epsilon && det < epsilon)
+    if (det > -EPSILON && det < EPSILON)
         return boost::none;
 
     const float invDet = 1.0f / det;
@@ -44,27 +44,31 @@ RayIntersectsTriangle(const glm::vec3 orig, const glm::vec3 ray, const glm::vec3
 
     float t = glm::dot(edge2, qvec) * invDet;
 
-    if (t < epsilon)
+    if (t < EPSILON)
         return boost::none;
 
-    // glm::vec3 intersection = vert0 + result.x * edge2 + result.y * edge1;
     glm::vec3 intersection = orig + ray * t;
 
     auto normal = glm::normalize(glm::cross(edge1, edge2));
 
-    return std::tuple<float, glm::vec3, glm::vec3, glm::vec3>(
+    return TriangleIntersection(
         t, intersection, glm::vec3(1.0f - (result.x + result.y), result.x, result.y),
         normal);
 }
 
 bool Beetween(float v, float low, float high) { return low <= v && v <= high; }
 
+bool PointInAABB(glm::vec3 point, glm::vec3 lower_bound, glm::vec3 upper_bound)
+{
+    return Beetween(point.x, lower_bound.x, upper_bound.x) &&
+           Beetween(point.y, lower_bound.y, upper_bound.y) &&
+           Beetween(point.z, lower_bound.z, upper_bound.z);
+}
+
 bool CollidesWithAABB(glm::vec3 lower_bound, glm::vec3 upper_bound, glm::vec3 origin,
                       glm::vec3 direction)
 {
-    if (Beetween(origin.x, lower_bound.x, upper_bound.x) &&
-        Beetween(origin.y, lower_bound.y, upper_bound.y) &&
-        Beetween(origin.z, lower_bound.z, upper_bound.z))
+    if (PointInAABB(origin, lower_bound, upper_bound))
         return true;
 
     float tmin = std::numeric_limits<float>::min(),
@@ -98,10 +102,10 @@ boost::optional<Intersection> Raytracer::Trace(glm::vec3 source, glm::vec3 dir,
                            source, dir, kd_tree_[0]))
     {
         Intersection result;
-        result.diffuse.x =
-            float(intersection->object_id_ + 1) / float(scene_.mesh_->m_Entries.size());
+        result.diffuse.x = float(intersection->second.object_id_ + 1) /
+                           float(scene_.mesh_->m_Entries.size());
         result.diffuse.y = 1.0f;
-        result.diffuse.z = intersection->object_id_ == 0 ? 1.0f : 0.0f;
+        result.diffuse.z = float(intersection->second.object_id_ + 1) == 0 ? 1.0f : 0.0f;
 
         return result;
     }
@@ -223,7 +227,7 @@ void Raytracer::KDTreeConstructStep(unsigned int position,
     }
 }
 
-boost::optional<TriangleIndices>
+boost::optional<std::pair<TriangleIntersection, TriangleIndices>>
 Raytracer::TraverseKdTree(glm::vec3 lower_bound, glm::vec3 upper_bound,
                           const glm::vec3 &origin, const glm::vec3 &direction,
                           const KDElement &current_node, int current_depth) const
@@ -265,7 +269,8 @@ Raytracer::TraverseKdTree(glm::vec3 lower_bound, glm::vec3 upper_bound,
     else
     {
         // we are leaf
-        auto intersection = CheckKdLeaf(origin, direction, current_node.leaf_);
+        auto intersection =
+            CheckKdLeaf(lower_bound, upper_bound, origin, direction, current_node.leaf_);
         /*
                 if (!intersection)
                     log_.Info() << "Not in leaf from: " << S(lower_bound) << " "
@@ -275,35 +280,33 @@ Raytracer::TraverseKdTree(glm::vec3 lower_bound, glm::vec3 upper_bound,
     }
 }
 
-boost::optional<TriangleIndices>
-Raytracer::CheckKdLeaf(glm::vec3 origin, glm::vec3 direction, const KDLeaf &leaf) const
+boost::optional<std::pair<TriangleIntersection, TriangleIndices>>
+Raytracer::CheckKdLeaf(const glm::vec3 &lower_bound, const glm::vec3 &upper_bound,
+                       const glm::vec3 &origin, const glm::vec3 &direction,
+                       const KDLeaf &leaf) const
 {
     int indices_start_index = -leaf.neg_first_index_;
 
-    boost::optional<TriangleIndices> intersection_so_far;
+    boost::optional<std::pair<TriangleIntersection, TriangleIndices>> intersection_so_far;
     auto intersection_dist_so_far = std::numeric_limits<float>::infinity();
-
-    glm::vec3 pos, normal;
-    glm::vec3 barycentric;
-    float intersection_dist;
 
     for (int i = indices_start_index; i < indices_start_index + leaf.indices_no_; i += 1)
     {
         const auto &mv = scene_.mesh_->m_Entries[indices_[i].object_id_].first.vertices_;
-
-        auto vertex1 = mv[indices_[i].t1_];
-        auto vertex2 = mv[indices_[i].t2_];
-        auto vertex3 = mv[indices_[i].t3_];
+        const auto &vertex1 = mv[indices_[i].t1_];
+        const auto &vertex2 = mv[indices_[i].t2_];
+        const auto &vertex3 = mv[indices_[i].t3_];
 
         if (auto intersection = RayIntersectsTriangle(origin, direction, vertex1.pos_,
                                                       vertex2.pos_, vertex3.pos_))
         {
-            std::tie(intersection_dist, pos, barycentric, normal) = *intersection;
-
-            if (intersection_dist < intersection_dist_so_far)
+            if (intersection->dist_ < intersection_dist_so_far &&
+                PointInAABB(intersection->global_pos_, lower_bound - EPSILON3,
+                            upper_bound + EPSILON3))
             {
-                intersection_so_far = indices_[i];
-                intersection_dist_so_far = intersection_dist;
+                intersection_so_far = std::pair<TriangleIntersection, TriangleIndices>(
+                    *intersection, indices_[i]);
+                intersection_dist_so_far = intersection->dist_;
             }
         }
     }
