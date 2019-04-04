@@ -13,8 +13,7 @@
 class Scene
 {
   public:
-    std::unique_ptr<Mesh> mesh_;
+    std::shared_ptr<Mesh> mesh_;
     std::vector<PointLight> point_lights_;
-
     glm::vec3 ambient_light_;
 };

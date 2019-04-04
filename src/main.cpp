@@ -57,12 +57,12 @@ int main(int argc, char **argv)
     //    glm::vec3(0.8f, 0.8f, 0.8f),
     //});
 
-    ViewRaytracer vis_rt(std::move(scene));
+    ViewRayCaster vis_rt(scene);
 
     bool exit_requested = false;
     while (!exit_requested)
     {
-        vis_gl.Render(vis_rt.raytracer_.scene_);
+        vis_gl.Render(scene);
         vis_rt.Render();
 
         while (auto action = vis_gl.DequeueAction())
@@ -81,8 +81,8 @@ int main(int argc, char **argv)
                 glm::vec4 ray_r(0.0f, 0.0f, 1.0f, 1.0f);
 
                 auto target = inv_mvp * ray_r;
-                auto intersection = vis_rt.raytracer_.Trace(vis_gl.GetCameraPos(),
-                                                            glm::normalize(target));
+                auto intersection = vis_rt.pathtracer_.Trace(vis_gl.GetCameraPos(),
+                                                             glm::normalize(target));
                 if (intersection)
                     log.Info() << "Oneshot hit!";
                 else

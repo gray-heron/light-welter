@@ -92,7 +92,8 @@ set(SRCS_NOMAIN
   src/texture.cpp
   src/view_raytracer.cpp
   src/view_opengl.cpp
-  src/raytracer.cpp
+  src/raycaster.cpp
+  src/pathtracer.cpp
   
   inc/config.h
   inc/exceptions.h
@@ -100,7 +101,8 @@ set(SRCS_NOMAIN
   inc/shader.h
   inc/mesh.h
   inc/texture.h
-  inc/raytracer.h
+  inc/pathtracer.h
+  inc/raycaster.h
   inc/view_raytracer.h
   inc/view_opengl.h
   )

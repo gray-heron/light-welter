@@ -1,6 +1,6 @@
 
 
-#include "raytracer.h"
+#include "raycaster.h"
 #include "config.h"
 #include "exceptions.h"
 
@@ -87,50 +87,30 @@ bool CollidesWithAABB(glm::vec3 lower_bound, glm::vec3 upper_bound, glm::vec3 or
     return tmax >= tmin;
 }
 
-boost::optional<Intersection> Raytracer::Trace(glm::vec3 source, glm::vec3 dir,
-                                               boost::optional<uint32_t> max_depth) const
+boost::optional<std::pair<TriangleIntersection, TriangleIndices>>
+RayCaster::Trace(glm::vec3 source, glm::vec3 dir) const
 {
-    if (!max_depth)
-        max_depth = Config::inst().GetOption<int>("recursion");
-
-    if (*max_depth == 0)
-        return boost::none;
-    boost::optional<Intersection> intersection_so_far;
-
-    if (auto intersection =
-            TraverseKdTree(scene_.mesh_->GetLowerBound(), scene_.mesh_->GetUpperBound(),
-                           source, dir, kd_tree_[0]))
-    {
-        Intersection result;
-        result.diffuse.x = float(intersection->second.object_id_ + 1) /
-                           float(scene_.mesh_->m_Entries.size());
-        result.diffuse.y = 1.0f;
-        result.diffuse.z = float(intersection->second.object_id_ + 1) == 0 ? 1.0f : 0.0f;
-
-        return result;
-    }
-
-    return intersection_so_far;
+    return TraverseKdTree(mesh_->GetLowerBound(), mesh_->GetUpperBound(), source, dir,
+                          kd_tree_[0]);
 }
 
-Raytracer::Raytracer(Scene &&scene)
+RayCaster::RayCaster(std::shared_ptr<Mesh> mesh)
     : indices_comparers_min_(
-          {std::bind(&Raytracer::CompareIndices, this, 0, true, _1, _2),
-           std::bind(&Raytracer::CompareIndices, this, 1, true, _1, _2),
-           std::bind(&Raytracer::CompareIndices, this, 2, true, _1, _2)}),
+          {std::bind(&RayCaster::CompareIndices, this, 0, true, _1, _2),
+           std::bind(&RayCaster::CompareIndices, this, 1, true, _1, _2),
+           std::bind(&RayCaster::CompareIndices, this, 2, true, _1, _2)}),
       indices_comparers_max_(
-          {std::bind(&Raytracer::CompareIndices, this, 0, false, _1, _2),
-           std::bind(&Raytracer::CompareIndices, this, 1, false, _1, _2),
-           std::bind(&Raytracer::CompareIndices, this, 2, false, _1, _2)}),
+          {std::bind(&RayCaster::CompareIndices, this, 0, false, _1, _2),
+           std::bind(&RayCaster::CompareIndices, this, 1, false, _1, _2),
+           std::bind(&RayCaster::CompareIndices, this, 2, false, _1, _2)}),
       max_triangles_in_kdleaf_(
           Config::inst().GetOption<int>("kdtree_max_triangles_in_leaf")),
-      kd_max_depth_(Config::inst().GetOption<int>("kdtree_max_depth")),
-      scene_(std::move(scene))
+      kd_max_depth_(Config::inst().GetOption<int>("kdtree_max_depth")), mesh_(mesh)
 {
     std::vector<TriangleIndices> indices_vector;
 
     uint16_t submesh_id = 0;
-    for (auto submesh : scene_.mesh_->m_Entries)
+    for (auto submesh : mesh_->m_Entries)
     {
         STRONG_ASSERT(submesh.first.indices_.size() % 3 == 0);
         log_.Info() << "Loading submesh with " << submesh.first.indices_.size() / 3
@@ -146,7 +126,7 @@ Raytracer::Raytracer(Scene &&scene)
         submesh_id++;
     }
 
-    log_.Info() << scene_.mesh_->m_Entries.size() << " submeshes loaded, "
+    log_.Info() << mesh_->m_Entries.size() << " submeshes loaded, "
                 << indices_vector.size() << " triangles in total.";
     log_.Info() << "Constructing KD-tree...";
 
@@ -161,7 +141,7 @@ Raytracer::Raytracer(Scene &&scene)
                 << ", average depth: " << float(total_depth_) / float(leafs_);
 }
 
-void Raytracer::KDTreeConstructStep(unsigned int position,
+void RayCaster::KDTreeConstructStep(unsigned int position,
                                     std::vector<TriangleIndices>::iterator table_start,
                                     std::vector<TriangleIndices>::iterator table_end,
                                     std::vector<TriangleIndices> &carry,
@@ -181,7 +161,7 @@ void Raytracer::KDTreeConstructStep(unsigned int position,
         std::sort(table_start, table_end, indices_comparers_max_[split_dimension]);
 
         auto pivot = table_start + ((table_end - table_start) / 2);
-        const auto &mv = scene_.mesh_->m_Entries[pivot->object_id_].first.vertices_;
+        const auto &mv = mesh_->m_Entries[pivot->object_id_].first.vertices_;
         float split = std::max(std::max(mv[pivot->t1_].pos_[split_dimension],
                                         mv[pivot->t2_].pos_[split_dimension]),
                                mv[pivot->t3_].pos_[split_dimension]);
@@ -228,7 +208,7 @@ void Raytracer::KDTreeConstructStep(unsigned int position,
 }
 
 boost::optional<std::pair<TriangleIntersection, TriangleIndices>>
-Raytracer::TraverseKdTree(glm::vec3 lower_bound, glm::vec3 upper_bound,
+RayCaster::TraverseKdTree(glm::vec3 lower_bound, glm::vec3 upper_bound,
                           const glm::vec3 &origin, const glm::vec3 &direction,
                           const KDElement &current_node, int current_depth) const
 {
@@ -271,17 +251,13 @@ Raytracer::TraverseKdTree(glm::vec3 lower_bound, glm::vec3 upper_bound,
         // we are leaf
         auto intersection =
             CheckKdLeaf(lower_bound, upper_bound, origin, direction, current_node.leaf_);
-        /*
-                if (!intersection)
-                    log_.Info() << "Not in leaf from: " << S(lower_bound) << " "
-                                << " to " << S(upper_bound);
-        */
+
         return intersection;
     }
 }
 
 boost::optional<std::pair<TriangleIntersection, TriangleIndices>>
-Raytracer::CheckKdLeaf(const glm::vec3 &lower_bound, const glm::vec3 &upper_bound,
+RayCaster::CheckKdLeaf(const glm::vec3 &lower_bound, const glm::vec3 &upper_bound,
                        const glm::vec3 &origin, const glm::vec3 &direction,
                        const KDLeaf &leaf) const
 {
@@ -292,7 +268,7 @@ Raytracer::CheckKdLeaf(const glm::vec3 &lower_bound, const glm::vec3 &upper_boun
 
     for (int i = indices_start_index; i < indices_start_index + leaf.indices_no_; i += 1)
     {
-        const auto &mv = scene_.mesh_->m_Entries[indices_[i].object_id_].first.vertices_;
+        const auto &mv = mesh_->m_Entries[indices_[i].object_id_].first.vertices_;
         const auto &vertex1 = mv[indices_[i].t1_];
         const auto &vertex2 = mv[indices_[i].t2_];
         const auto &vertex3 = mv[indices_[i].t3_];
@@ -314,11 +290,11 @@ Raytracer::CheckKdLeaf(const glm::vec3 &lower_bound, const glm::vec3 &upper_boun
     return intersection_so_far;
 }
 
-bool Raytracer::CompareIndices(int dim, bool min, const TriangleIndices &i1,
+bool RayCaster::CompareIndices(int dim, bool min, const TriangleIndices &i1,
                                const TriangleIndices &i2) const
 {
-    const auto &mv1 = scene_.mesh_->m_Entries[i1.object_id_].first.vertices_;
-    const auto &mv2 = scene_.mesh_->m_Entries[i2.object_id_].first.vertices_;
+    const auto &mv1 = mesh_->m_Entries[i1.object_id_].first.vertices_;
+    const auto &mv2 = mesh_->m_Entries[i2.object_id_].first.vertices_;
 
     if (min)
         return std::min(std::min(mv1[i1.t1_].pos_[dim], mv1[i1.t2_].pos_[dim]),
@@ -332,10 +308,10 @@ bool Raytracer::CompareIndices(int dim, bool min, const TriangleIndices &i1,
                         mv2[i2.t3_].pos_[dim]);
 }
 
-bool Raytracer::CompareIndicesToAAPlane(int dim, bool min, const TriangleIndices &i1,
+bool RayCaster::CompareIndicesToAAPlane(int dim, bool min, const TriangleIndices &i1,
                                         float plane) const
 {
-    const auto &mv1 = scene_.mesh_->m_Entries[i1.object_id_].first.vertices_;
+    const auto &mv1 = mesh_->m_Entries[i1.object_id_].first.vertices_;
 
     if (min)
         return std::min(std::min(mv1[i1.t1_].pos_[dim], mv1[i1.t2_].pos_[dim]),

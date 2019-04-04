@@ -10,9 +10,9 @@
 
 #include "log.h"
 #include "mesh.h"
-#include "raytracer.h"
+#include "pathtracer.h"
 
-class ViewRaytracer
+class ViewRayCaster
 {
   public:
     enum Action
@@ -28,12 +28,12 @@ class ViewRaytracer
     SDL2pp::Texture tex_;
 
     uint8_t *raytracer_surface_;
-    Log log_{"ViewRaytracer"};
+    Log log_{"ViewRayCaster"};
 
   public:
-    ViewRaytracer(Scene &&scene);
+    ViewRayCaster(const Scene &scene);
     void TakePicture(glm::vec3 camera_pos, glm::mat4 mvp, const Scene &scene);
     void Render();
 
-    Raytracer raytracer_;
+    PathTracer pathtracer_;
 };

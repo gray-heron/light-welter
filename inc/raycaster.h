@@ -53,7 +53,7 @@ struct TriangleIntersection
     glm::vec3 normal_;
 };
 
-class Raytracer
+class RayCaster
 {
     std::array<std::function<bool(const TriangleIndices &i1, const TriangleIndices &i2)>,
                3>
@@ -83,7 +83,7 @@ class Raytracer
                 const glm::vec3 &origin, const glm::vec3 &direction,
                 const KDLeaf &leaf) const;
 
-    Log log_{"Raytracer"};
+    Log log_{"RayCaster"};
 
     std::vector<KDElement> kd_tree_;
     std::vector<TriangleIndices> indices_;
@@ -93,11 +93,10 @@ class Raytracer
     int leafs_ = 0;
 
   public:
-    Raytracer(Scene &&scene);
+    RayCaster(std::shared_ptr<Mesh> mesh);
 
-    boost::optional<Intersection>
-    Trace(glm::vec3 source, glm::vec3 target,
-          boost::optional<uint32_t> max_depth = boost::none) const;
+    boost::optional<std::pair<TriangleIntersection, TriangleIndices>>
+    Trace(glm::vec3 source, glm::vec3 target) const;
 
-    const Scene scene_;
+    const std::shared_ptr<Mesh> mesh_;
 };
