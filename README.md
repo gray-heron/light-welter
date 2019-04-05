@@ -70,3 +70,5 @@ For now please only use "standard" resolutions, i.e. 640x480 instead of 600x400.
 >pugixml
 
 >GLM
+
+>CMakeRC
