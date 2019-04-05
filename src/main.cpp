@@ -40,7 +40,7 @@ int main(int argc, char **argv)
     ViewOpenGL vis_gl;
 
     if (scene.point_lights_.size() > 0)
-        scene.ambient_light_ = {0.18f, 0.18f, 0.18f};
+        scene.ambient_light_ = {0.000002f, 0.000002f, 0.000002f};
     else
         scene.ambient_light_ = {1.0f, 1.0f, 1.0f};
 

@@ -84,7 +84,7 @@ void Texture::Bind(GLenum texture_unit)
     glBindTexture(texture_target_, texture_obj_);
 }
 
-glm::vec3 Texture::GetPixel(glm::vec2 uv)
+glm::vec3 Texture::GetPixel(glm::vec2 uv) const
 {
     int x = uv.x * w_;
     int y = uv.y * h_;

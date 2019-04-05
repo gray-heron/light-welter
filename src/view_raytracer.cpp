@@ -60,6 +60,7 @@ void ViewRayCaster::TakePicture(glm::vec3 camera_pos, glm::mat4 mvp, const Scene
     Log("RayCasterView").Info() << "Started taking picture.";
 
     auto inv_mvp = glm::inverse(mvp);
+    auto iso = Config::inst().GetOption<float>("iso");
 
     auto rt_func = [&](int x_start, int cols) -> void {
         for (int x = x_start; x < x_start + cols; x += 1)
@@ -80,9 +81,10 @@ void ViewRayCaster::TakePicture(glm::vec3 camera_pos, glm::mat4 mvp, const Scene
 
                 if (intersection)
                 {
-                    b = float(0xff) * glm::min(intersection->x, 1.0f);
-                    g = float(0xff) * glm::min(intersection->y, 1.0f);
-                    r = float(0xff) * glm::min(intersection->z, 1.0f);
+                    auto readout = iso * *intersection; // xd
+                    b = float(0xff) * glm::min(readout.x, 1.0f);
+                    g = float(0xff) * glm::min(readout.y, 1.0f);
+                    r = float(0xff) * glm::min(readout.z, 1.0f);
                     a = 0xff;
                 }
                 else

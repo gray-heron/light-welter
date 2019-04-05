@@ -1,10 +1,10 @@
 # Test view scene: in OBJ format coords righthanded, CCW faces
 cornell_box.obj
 cornell.png
-1
+4
 1280 800
 217.185699 293.676147 -175.877060
-217.353210 293.031921 -175.130783
+217.159409 293.241180 -174.976990
 0 1 0
 1
 L 456 256 85 255 255 255 50

@@ -27,17 +27,6 @@ inline glm::mat4 aiMatrix4x4ToGlm(const aiMatrix4x4 &from)
     return to;
 }
 
-glm::vec3 GetDiffuse(const Vertex &v1, const Vertex &v2, const Vertex &v3,
-                     glm::vec3 bary_cords, Texture &tex)
-{
-    glm::vec2 uv(0.0f, 0.0f);
-    uv += v1.tex_ * bary_cords.x;
-    uv += v2.tex_ * bary_cords.y;
-    uv += v3.tex_ * bary_cords.z;
-
-    return tex.GetPixel(uv);
-}
-
 Mesh::MeshEntry::MeshEntry(std::vector<Vertex> &&Vertices,
                            std::vector<glm::u32> &&Indices, unsigned int MaterialIndex)
     : vertices_(Vertices), indices_(Indices)

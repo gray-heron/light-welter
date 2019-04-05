@@ -9,7 +9,7 @@ using namespace std::placeholders;
 extern std::string S(glm::vec4 in);
 extern std::string S(glm::vec3 in);
 
-const float EPSILON = 0.0001f;
+const float EPSILON = 0.001f;
 glm::vec3 EPSILON3 = glm::vec3(EPSILON, EPSILON, EPSILON);
 
 // https://gamedev.stackexchange.com/questions/133109/m%C3%B6ller-trumbore-false-positive

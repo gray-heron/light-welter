@@ -1,8 +1,9 @@
 #pragma once
 
 #include <boost/optional.hpp>
-#include <glm/vec3.hpp>
+#include <glm/glm.hpp>
 
+#include "config.h"
 #include "exceptions.h"
 #include "log.h"
 #include "raycaster.h"
@@ -12,15 +13,19 @@ class PathTracer
 {
     Log log_{"PathTracer"};
 
-    glm::vec3 Trace(glm::vec3 source, glm::vec3 target,
-                    boost::optional<uint32_t> max_depth = boost::none) const;
+    boost::optional<glm::vec3> Trace(glm::vec3 source, glm::vec3 target,
+                                     int32_t depth) const;
 
-    std::vector<PointLight> point_lights_;
-    glm::vec3 ambient_light_;
-    RayCaster raycaster_;
+    // Forced Incomming Light FIXME
+    glm::vec3 FIL(boost::optional<glm::vec3> light) const;
+
+    const Scene scene_;
+    const RayCaster raycaster_;
+    const int recursion_level_;
+    const float specular_reflection_factor_;
 
   public:
     PathTracer(const Scene &scene);
 
-    boost::optional<glm::vec3> Trace(glm::vec3 camera_pos, glm::vec3 dir);
+    boost::optional<glm::vec3> Trace(glm::vec3 camera_pos, glm::vec3 dir) const;
 };
