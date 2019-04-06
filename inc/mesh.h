@@ -28,8 +28,9 @@ class Mesh : public Renderable
     {
         MeshEntry(std::vector<Vertex> &&Vertices, std::vector<glm::u32> &&Indices,
                   unsigned int MaterialIndex);
-
         ~MeshEntry();
+
+        void SetupForOpenGL();
 
         GLuint VB;
         GLuint IB;
@@ -43,6 +44,7 @@ class Mesh : public Renderable
     virtual ~Mesh();
 
     void RenderByOpenGL(OpenGLRenderingContext context, aiNode *node = nullptr) override;
+    void SetupForOpenGL();
 
     std::unique_ptr<boost::optional<Texture>[]> materials_;
     std::vector<std::pair<MeshEntry, boost::optional<Texture> &>> m_Entries;

@@ -10,6 +10,8 @@
     <threads type="int">4</threads>
     <cols_per_thread type="int">4</cols_per_thread>
 
+    <interactive type="bool">1</interactive>
+
    <!-- <rtc_file type="string">res/phoenix/phoenix.rtc</rtc_file>
     <rtc_dir type="string">res/phoenix/</rtc_dir>  -->
 

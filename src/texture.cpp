@@ -53,7 +53,10 @@ Texture::Texture(GLenum texture_target, glm::vec3 diff_color,
 
     glGenTextures(1, &texture_obj_);
     glBindTexture(texture_target, texture_obj_);
+}
 
+void Texture::SetupForOpenGL()
+{
     int mode;
     switch (surface_.Get()->format->BytesPerPixel)
     {

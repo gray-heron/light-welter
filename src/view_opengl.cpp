@@ -21,11 +21,9 @@ glm::vec4 NTH(glm::vec3 nonhomo_vector)
 extern std::string S(glm::vec4 in);
 extern std::string S(glm::vec3 in);
 
-ViewOpenGL::ViewOpenGL()
+CameraManager::CameraManager()
     : rx_(Config::inst().GetOption<int>("resx")),
       ry_(Config::inst().GetOption<int>("resy")),
-      window_("OpenGL preview", 10, SDL_WINDOWPOS_CENTERED, rx_, ry_, SDL_WINDOW_OPENGL),
-      main_context_(SDL_GL_CreateContext(window_.Get())),
       camera_pos_(Config::inst().GetOption<glm::vec3>("camera_pos")),
       fov_(65.0f / Config::inst().GetOption<float>("fov_factor")), pitch_(0.0f),
       yaw_(0.0f),
@@ -33,6 +31,49 @@ ViewOpenGL::ViewOpenGL()
       camera_lookat_(*alt_look_at_)
 {
     UpdateCamera();
+}
+
+glm::mat4 CameraManager::UpdateCamera()
+{
+    if (!alt_look_at_)
+    {
+        glm::vec4 lookat_h = glm::vec4(1.0f, 0.0f, 0.0f, 1.0);
+
+        glm::mat4 rot = glm::rotate(glm::mat4(1.0f), yaw_, glm::vec3(0, 1, 0));
+        rot = glm::rotate(rot, pitch_, glm::vec3(0, 0, 1));
+
+        lookat_h = rot * lookat_h;
+        camera_lookat_ = HTN(lookat_h);
+
+        return glm::lookAt(camera_pos_, camera_pos_ + camera_lookat_, glm::vec3(0, 1, 0));
+    }
+    else
+    {
+        return glm::lookAt(camera_pos_, camera_pos_ + *alt_look_at_, glm::vec3(0, 1, 0));
+    }
+}
+
+glm::mat4 CameraManager::GetMVP()
+{
+    glm::mat4 projection =
+        glm::perspective(glm::radians(fov_), float(rx_) / float(ry_), 1.0f, 1000.0f);
+
+    glm::mat4 model = glm::mat4(1.0f);
+
+    glm::mat4 view = UpdateCamera();
+
+    glm::mat4 mvp = projection * view * model;
+
+    return mvp;
+}
+
+glm::vec3 CameraManager::GetCameraPos() { return camera_pos_; }
+
+ViewOpenGL::ViewOpenGL()
+    : CameraManager(),
+      window_("OpenGL preview", 10, SDL_WINDOWPOS_CENTERED, rx_, ry_, SDL_WINDOW_OPENGL),
+      main_context_(SDL_GL_CreateContext(window_.Get()))
+{
     SDL_GL_SetSwapInterval(1);
     SDL_GL_ResetAttributes();
 
@@ -55,42 +96,6 @@ ViewOpenGL::ViewOpenGL()
 
     glUseProgram(programID);
 }
-
-glm::mat4 ViewOpenGL::UpdateCamera()
-{
-    if (!alt_look_at_)
-    {
-        glm::vec4 lookat_h = glm::vec4(1.0f, 0.0f, 0.0f, 1.0);
-
-        glm::mat4 rot = glm::rotate(glm::mat4(1.0f), yaw_, glm::vec3(0, 1, 0));
-        rot = glm::rotate(rot, pitch_, glm::vec3(0, 0, 1));
-
-        lookat_h = rot * lookat_h;
-        camera_lookat_ = HTN(lookat_h);
-
-        return glm::lookAt(camera_pos_, camera_pos_ + camera_lookat_, glm::vec3(0, 1, 0));
-    }
-    else
-    {
-        return glm::lookAt(camera_pos_, camera_pos_ + *alt_look_at_, glm::vec3(0, 1, 0));
-    }
-}
-
-glm::mat4 ViewOpenGL::GetMVP()
-{
-    glm::mat4 projection =
-        glm::perspective(glm::radians(fov_), float(rx_) / float(ry_), 1.0f, 1000.0f);
-
-    glm::mat4 model = glm::mat4(1.0f);
-
-    glm::mat4 view = UpdateCamera();
-
-    glm::mat4 mvp = projection * view * model;
-
-    return mvp;
-}
-
-glm::vec3 ViewOpenGL::GetCameraPos() { return camera_pos_; }
 
 void ViewOpenGL::Render(const Scene &scene)
 {

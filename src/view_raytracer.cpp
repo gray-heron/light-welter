@@ -41,9 +41,10 @@ void save_texture(std::string filename, SDL_Renderer *renderer, SDL_Texture *tex
 ViewRayCaster::ViewRayCaster(const Scene &scene)
     : rx_(Config::inst().GetOption<int>("resx")),
       ry_(Config::inst().GetOption<int>("resy")),
-      window_("RayCaster preview", rx_ + 30, SDL_WINDOWPOS_CENTERED, rx_, ry_, 0),
+      window_("RayCaster preview", rx_ + 30, SDL_WINDOWPOS_CENTERED, rx_, ry_,
+              Config::inst().GetOption<bool>("interactive") ? 0 : SDL_WINDOW_HIDDEN),
       renderer_(window_, -1, SDL_RENDERER_SOFTWARE),
-      tex_(renderer_, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, rx_, ry_),
+      tex_(renderer_, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, rx_, ry_),
       raytracer_surface_(new uint8_t[rx_ * ry_ * 4]), pathtracer_(scene)
 {
 }

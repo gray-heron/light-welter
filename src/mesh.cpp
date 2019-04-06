@@ -1,5 +1,6 @@
 
 #include "mesh.h"
+#include "config.h"
 #include "exceptions.h"
 
 // https://stackoverflow.com/questions/29184311/how-to-rotate-a-skinned-models-bones-in-c-using-assimp
@@ -29,7 +30,12 @@ inline glm::mat4 aiMatrix4x4ToGlm(const aiMatrix4x4 &from)
 
 Mesh::MeshEntry::MeshEntry(std::vector<Vertex> &&Vertices,
                            std::vector<glm::u32> &&Indices, unsigned int MaterialIndex)
-    : vertices_(Vertices), indices_(Indices)
+    : vertices_(std::move(Vertices)), indices_(std::move(Indices))
+{
+    mat_index_ = MaterialIndex;
+};
+
+void Mesh::MeshEntry::SetupForOpenGL()
 {
     glGenBuffers(1, &VB);
     glBindBuffer(GL_ARRAY_BUFFER, VB);
@@ -40,13 +46,12 @@ Mesh::MeshEntry::MeshEntry(std::vector<Vertex> &&Vertices,
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IB);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * indices_.size(),
                  &indices_[0], GL_STATIC_DRAW);
-
-    mat_index_ = MaterialIndex;
-};
+}
 
 Mesh::MeshEntry::~MeshEntry()
 {
     // APPLY RULE OF FIVE
+    // FIXME I BEG YOU
     /*
     glDeleteBuffers(1, &VB);
     glDeleteBuffers(1, &IB);
@@ -69,6 +74,17 @@ Mesh::Mesh(std::string filename)
 }
 
 Mesh::~Mesh() {}
+
+void Mesh::SetupForOpenGL()
+{
+    for (auto &submesh : m_Entries)
+    {
+        submesh.first.SetupForOpenGL();
+
+        if (submesh.second)
+            submesh.second->SetupForOpenGL();
+    }
+}
 
 bool Mesh::InitFromScene(const aiScene *pScene, const std::string &Filename)
 {

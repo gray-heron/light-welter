@@ -14,6 +14,7 @@ class Texture
     ~Texture();
     void Bind(GLenum TextureUnit);
     glm::vec3 GetPixel(glm::vec2 uv) const;
+    void SetupForOpenGL();
     glm::vec3 diffuse_factor_;
 
   private:
