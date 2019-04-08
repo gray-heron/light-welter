@@ -103,6 +103,7 @@ set(SRCS_NOMAIN
   inc/texture.h
   inc/pathtracer.h
   inc/raycaster.h
+  inc/renderable.h
   inc/view_raytracer.h
   inc/view_opengl.h
   )

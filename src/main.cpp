@@ -63,7 +63,9 @@ int main(int argc, char **argv)
 
     if (interactive)
     {
-        ViewOpenGL vis_gl;
+        ViewOpenGL vis_gl(
+            (scene.mesh_->GetUpperBound() - scene.mesh_->GetLowerBound()).x / 100.0f);
+
         scene.mesh_->SetupForOpenGL();
 
         bool exit_requested = false;
@@ -88,10 +90,11 @@ int main(int argc, char **argv)
                     glm::vec4 ray_r(0.0f, 0.0f, 1.0f, 1.0f);
 
                     auto target = inv_mvp * ray_r;
-                    auto intersection = vis_rt.pathtracer_.Trace(vis_gl.GetCameraPos(),
-                                                                 glm::normalize(target));
-                    if (intersection)
-                        log.Info() << "Oneshot hit!";
+                    auto object_hit = vis_rt.pathtracer_.DebugTrace(
+                        vis_gl.GetCameraPos(), glm::normalize(target));
+
+                    if (object_hit)
+                        log.Info() << "Oneshot hit object " << *object_hit;
                     else
                         log.Info() << "Oneshot miss!";
                 }
@@ -106,7 +109,7 @@ int main(int argc, char **argv)
     }
     else
     {
-        CameraManager camera_manager;
+        CameraManager camera_manager(1.0f);
         vis_rt.TakePicture(camera_manager.GetCameraPos(), camera_manager.GetMVP(), scene);
     }
 }

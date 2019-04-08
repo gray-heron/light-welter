@@ -11,7 +11,7 @@
 #include <string>
 
 #include "log.h"
-#include "rendereable.h"
+#include "renderable.h"
 #include "texture.h"
 
 struct Vertex

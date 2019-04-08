@@ -19,7 +19,7 @@
     <rtc_dir type="string">res/view_test/</rtc_dir> 
 
     <kdtree_max_triangles_in_leaf type="int">20</kdtree_max_triangles_in_leaf>
-    <kdtree_max_depth type="int">20</kdtree_max_depth>
+    <kdtree_max_depth type="int">12</kdtree_max_depth>
 
     <iso type="float">100000</iso>
     <specular_reflection_factor type="float">0.2</specular_reflection_factor>

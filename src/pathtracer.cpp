@@ -33,6 +33,14 @@ boost::optional<glm::vec3> PathTracer::Trace(glm::vec3 camera_pos, glm::vec3 dir
     return Trace(camera_pos, dir, recursion_level_);
 }
 
+boost::optional<int> PathTracer::DebugTrace(glm::vec3 camera_pos, glm::vec3 dir) const
+{
+    if (auto result = raycaster_.Trace(camera_pos, dir))
+        return result->second.object_id_;
+    else
+        return boost::none;
+}
+
 boost::optional<glm::vec3> PathTracer::Trace(glm::vec3 origin, glm::vec3 dir,
                                              int32_t depth) const
 {

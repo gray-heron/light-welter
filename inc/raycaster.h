@@ -55,13 +55,6 @@ struct TriangleIntersection
 
 class RayCaster
 {
-    std::array<std::function<bool(const TriangleIndices &i1, const TriangleIndices &i2)>,
-               3>
-        indices_comparers_min_, indices_comparers_max_;
-
-    const int max_triangles_in_kdleaf_;
-    const int kd_max_depth_;
-
     bool CompareIndices(int dim, bool min, const TriangleIndices &i1,
                         const TriangleIndices &i2) const;
     bool CompareIndicesToAAPlane(int dim, bool min, const TriangleIndices &i1,
@@ -83,7 +76,12 @@ class RayCaster
                 const glm::vec3 &origin, const glm::vec3 &direction,
                 const KDLeaf &leaf) const;
 
-    Log log_{"RayCaster"};
+    std::array<std::function<bool(const TriangleIndices &i1, const TriangleIndices &i2)>,
+               3>
+        indices_comparers_min_, indices_comparers_max_;
+
+    const int max_triangles_in_kdleaf_;
+    const int kd_max_depth_;
 
     std::vector<KDElement> kd_tree_;
     std::vector<TriangleIndices> indices_;
@@ -91,6 +89,8 @@ class RayCaster
     int kd_elements_ = 0;
     int total_depth_ = 0;
     int leafs_ = 0;
+
+    Log log_{"RayCaster"};
 
   public:
     RayCaster(std::shared_ptr<Mesh> mesh);

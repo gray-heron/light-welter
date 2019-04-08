@@ -28,4 +28,5 @@ class PathTracer
     PathTracer(const Scene &scene);
 
     boost::optional<glm::vec3> Trace(glm::vec3 camera_pos, glm::vec3 dir) const;
+    boost::optional<int> DebugTrace(glm::vec3 camera_pos, glm::vec3 dir) const;
 };

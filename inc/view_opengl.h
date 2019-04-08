@@ -21,6 +21,7 @@ class CameraManager
     glm::vec3 camera_pos_;
     float fov_;
     float pitch_, yaw_;
+    float movement_sensitivity_;
 
     boost::optional<glm::vec3> alt_look_at_;
     glm::vec3 camera_lookat_;
@@ -28,7 +29,7 @@ class CameraManager
     glm::mat4 UpdateCamera();
 
   public:
-    CameraManager();
+    CameraManager(float movement_sensitivity);
 
     glm::mat4 GetMVP();
     glm::vec3 GetCameraPos();
@@ -56,7 +57,7 @@ class ViewOpenGL : public CameraManager
     OpenGLRenderingContext rendering_context_;
 
   public:
-    ViewOpenGL();
+    ViewOpenGL(float movement_sensitivity);
 
     void Render(const Scene &scene);
     Log log_{"ViewOpenGL"};
