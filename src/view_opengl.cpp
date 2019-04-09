@@ -25,6 +25,7 @@ CameraManager::CameraManager(float movement_sensitivity)
     : rx_(Config::inst().GetOption<int>("resx")),
       ry_(Config::inst().GetOption<int>("resy")),
       camera_pos_(Config::inst().GetOption<glm::vec3>("camera_pos")),
+      up_(Config::inst().GetOption<glm::vec3>("camera_up")),
       fov_(65.0f / Config::inst().GetOption<float>("fov_factor")), pitch_(0.0f),
       yaw_(0.0f), movement_sensitivity_(movement_sensitivity),
       alt_look_at_(Config::inst().GetOption<glm::vec3>("camera_lookat") - camera_pos_),
@@ -39,24 +40,24 @@ glm::mat4 CameraManager::UpdateCamera()
     {
         glm::vec4 lookat_h = glm::vec4(1.0f, 0.0f, 0.0f, 1.0);
 
-        glm::mat4 rot = glm::rotate(glm::mat4(1.0f), yaw_, glm::vec3(0, 1, 0));
-        rot = glm::rotate(rot, pitch_, glm::vec3(0, 0, 1));
+        glm::mat4 rot = glm::rotate(glm::mat4(1.0f), yaw_, up_);
+        rot = glm::rotate(rot, pitch_, glm::vec3(0, 1, 1) - up_);
 
         lookat_h = rot * lookat_h;
         camera_lookat_ = HTN(lookat_h);
 
-        return glm::lookAt(camera_pos_, camera_pos_ + camera_lookat_, glm::vec3(0, 1, 0));
+        return glm::lookAt(camera_pos_, camera_pos_ + camera_lookat_, up_);
     }
     else
     {
-        return glm::lookAt(camera_pos_, camera_pos_ + *alt_look_at_, glm::vec3(0, 1, 0));
+        return glm::lookAt(camera_pos_, camera_pos_ + *alt_look_at_, up_);
     }
 }
 
 glm::mat4 CameraManager::GetMVP()
 {
     glm::mat4 projection =
-        glm::perspective(glm::radians(fov_), float(rx_) / float(ry_), 1.0f, 1000.0f);
+        glm::perspective(glm::radians(fov_), float(rx_) / float(ry_), 1.0f, 10000.0f);
 
     glm::mat4 model = glm::mat4(1.0f);
 
@@ -162,10 +163,10 @@ void ViewOpenGL::HandleKeyDown(SDL_KeyboardEvent key)
         camera_pos_ -= camera_lookat_side * movement_sensitivity_;
         break;
     case SDLK_q:
-        camera_pos_ += glm::vec3(0.0, 1.0, 0.0) * movement_sensitivity_;
+        camera_pos_ += up_ * movement_sensitivity_;
         break;
     case SDLK_e:
-        camera_pos_ += glm::vec3(0.0, -1.0, 0.0) * movement_sensitivity_;
+        camera_pos_ += -up_ * movement_sensitivity_;
         break;
     case SDLK_KP_PLUS:
         fov_ *= 1.1f;

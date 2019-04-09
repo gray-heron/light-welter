@@ -60,6 +60,8 @@ class RayCaster
     bool CompareIndicesToAAPlane(int dim, bool min, const TriangleIndices &i1,
                                  float plane) const;
 
+    float TriangleMax(int dim, const TriangleIndices &i1);
+
     // returns the position in the kd_tree_
     void KDTreeConstructStep(unsigned int position,
                              std::vector<TriangleIndices>::iterator table_start,
@@ -76,15 +78,22 @@ class RayCaster
                 const glm::vec3 &origin, const glm::vec3 &direction,
                 const KDLeaf &leaf) const;
 
+    std::vector<TriangleIndices>::iterator
+    SurfaceAreaHeuristic(std::vector<TriangleIndices>::iterator left,
+                         std::vector<TriangleIndices>::iterator right,
+                         int split_dimension);
+
     std::array<std::function<bool(const TriangleIndices &i1, const TriangleIndices &i2)>,
                3>
         indices_comparers_min_, indices_comparers_max_;
 
     const int max_triangles_in_kdleaf_;
     const int kd_max_depth_;
+    const int sah_resolution_;
 
     std::vector<KDElement> kd_tree_;
     std::vector<TriangleIndices> indices_;
+    std::vector<float> sah_segments_;
 
     int kd_elements_ = 0;
     int total_depth_ = 0;

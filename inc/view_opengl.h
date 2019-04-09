@@ -19,6 +19,7 @@ class CameraManager
     const uint32_t rx_, ry_;
 
     glm::vec3 camera_pos_;
+    const glm::vec3 up_;
     float fov_;
     float pitch_, yaw_;
     float movement_sensitivity_;

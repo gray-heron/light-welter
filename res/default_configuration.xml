@@ -19,11 +19,13 @@
     <rtc_dir type="string">res/view_test/</rtc_dir> 
 
     <kdtree_max_triangles_in_leaf type="int">20</kdtree_max_triangles_in_leaf>
-    <kdtree_max_depth type="int">12</kdtree_max_depth>
+    <kdtree_max_depth type="int">20</kdtree_max_depth>
+    <sah_resolution type="int">0</sah_resolution>
 
-    <iso type="float">100000</iso>
-    <specular_reflection_factor type="float">0.2</specular_reflection_factor>
-    <ambient_light type="vec3">0.0 0.0 0.0</ambient_light>
+    <iso type="float">1200</iso>
+    <specular_reflection_factor type="float">0.01</specular_reflection_factor>
+    <ambient_light type="vec3">0.0002 0.0002 0.0002</ambient_light>
+    <sky type="vec3">0.0 0.0 0.1</sky>
 
     <scene type="string"></scene>
     <target_file type="string"></target_file>

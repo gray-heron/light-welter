@@ -28,6 +28,7 @@ class ViewRayCaster
     SDL2pp::Texture tex_;
 
     uint8_t *raytracer_surface_;
+    const glm::vec3 sky_color_;
     Log log_{"ViewRayCaster"};
 
   public:

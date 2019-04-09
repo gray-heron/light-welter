@@ -36,13 +36,14 @@ int main(int argc, char **argv)
 
     //====================
     bool interactive = Config::inst().GetOption<bool>("interactive");
+    glm::vec3 ambient_rgb_ = Config::inst().GetOption<glm::vec3>("ambient_light");
 
     if (!interactive)
         putenv((char *)"SDL_VIDEODRIVER=dummy");
     SDL2pp::SDL sdl_(SDL_INIT_VIDEO);
 
     if (scene.point_lights_.size() > 0)
-        scene.ambient_light_ = {0.000002f, 0.000002f, 0.000002f};
+        scene.ambient_light_ = {ambient_rgb_};
     else
         scene.ambient_light_ = {1.0f, 1.0f, 1.0f};
 

@@ -105,7 +105,9 @@ RayCaster::RayCaster(std::shared_ptr<Mesh> mesh)
            std::bind(&RayCaster::CompareIndices, this, 2, false, _1, _2)}),
       max_triangles_in_kdleaf_(
           Config::inst().GetOption<int>("kdtree_max_triangles_in_leaf")),
-      kd_max_depth_(Config::inst().GetOption<int>("kdtree_max_depth")), mesh_(mesh)
+      kd_max_depth_(Config::inst().GetOption<int>("kdtree_max_depth")),
+      sah_resolution_(Config::inst().GetOption<int>("sah_resolution")), mesh_(mesh)
+
 {
     std::vector<TriangleIndices> indices_vector;
 
@@ -132,6 +134,7 @@ RayCaster::RayCaster(std::shared_ptr<Mesh> mesh)
 
     kd_tree_.resize(indices_vector.size());
     indices_.reserve(indices_vector.size());
+    sah_segments_.resize(sah_resolution_);
 
     std::vector<TriangleIndices> empty_carry;
 
@@ -139,6 +142,102 @@ RayCaster::RayCaster(std::shared_ptr<Mesh> mesh)
 
     log_.Info() << "KD-tree construction done. Total leafs: " << leafs_
                 << ", average depth: " << float(total_depth_) / float(leafs_);
+}
+
+float TriangleArea(const Vertex &v1, const Vertex &v2, const Vertex &v3)
+{
+    glm::vec3 ab = v2.pos_ - v1.pos_;
+    glm::vec3 ac = v3.pos_ - v1.pos_;
+
+    return glm::length(glm::cross(ab, ac)) / 2.0f;
+}
+
+std::vector<TriangleIndices>::iterator
+RayCaster::SurfaceAreaHeuristic(std::vector<TriangleIndices>::iterator left,
+                                std::vector<TriangleIndices>::iterator right,
+                                int split_dimension)
+{
+    std::fill(sah_segments_.begin(), sah_segments_.end(), 0);
+
+    float area_left = 0.0f, area_right = 0.0f;
+    const int triangles_no = right - left;
+    const int triangles_per_segment = (triangles_no / sah_resolution_) + 1;
+    int segments_used = 0;
+
+    const float ll = TriangleMax(split_dimension, *left);
+    const float lr = TriangleMax(split_dimension, *(right - 1));
+
+    if (lr - ll < 0.001f)
+    {
+        log_.Warning() << "SAH called on super small triangle range. Returning middle!";
+        return left + triangles_no / 2;
+    }
+
+    std::vector<TriangleIndices>::iterator iter = left;
+
+    for (float &segment : sah_segments_)
+    {
+        for (int i = 0; i < triangles_per_segment; i++)
+        {
+            if (iter == right)
+                break;
+
+            const std::vector<Vertex> &mv =
+                mesh_->m_Entries[iter->object_id_].first.vertices_;
+
+            float current_area =
+                TriangleArea(mv[iter->t1_], mv[iter->t2_], mv[iter->t3_]);
+
+            segment += current_area;
+            area_right += current_area;
+
+            ++iter;
+        }
+
+        segments_used += 1;
+
+        if (iter == right)
+            break;
+    }
+
+    int best_split = -1;
+    float best_split_value = std::numeric_limits<float>::max();
+
+    for (int i = 0; i < segments_used - 1; i++)
+    {
+        if (i * triangles_per_segment >= triangles_no)
+            break;
+
+        area_left += sah_segments_[i];
+        area_right -= sah_segments_[i];
+
+        float size_left =
+            (TriangleMax(split_dimension, *(left + i * triangles_per_segment)) - ll) /
+            (lr - ll);
+
+        STRONG_ASSERT(size_left <= 1.0f);
+        STRONG_ASSERT(size_left >= 0.0f);
+
+        float current_sah_value = size_left * area_left + (1.0f - size_left) * area_right;
+
+        STRONG_ASSERT(current_sah_value > 0.0f);
+
+        // log_.Info() << "Split at "
+        //            << TriangleMax(split_dimension, *(left + i * triangles_per_segment))
+        //            << " has value " << current_sah_value;
+
+        if (current_sah_value < best_split_value)
+        {
+            best_split_value = current_sah_value;
+            best_split = i;
+        }
+    }
+
+    STRONG_ASSERT(best_split != -1);
+
+    // log_.Info() << "Choosing split at " << best_split;
+
+    return left + best_split * triangles_per_segment;
 }
 
 void RayCaster::KDTreeConstructStep(unsigned int position,
@@ -155,17 +254,42 @@ void RayCaster::KDTreeConstructStep(unsigned int position,
 
     int triagles_no = (table_end - table_start) + carry.size();
 
-    if (triagles_no > max_triangles_in_kdleaf_ && current_depth < kd_max_depth_)
+    if (triagles_no > max_triangles_in_kdleaf_ && current_depth < kd_max_depth_ &&
+        (table_end - table_start) > carry.size())
     {
         int split_dimension = current_depth % 3;
         std::sort(table_start, table_end, indices_comparers_max_[split_dimension]);
 
-        auto pivot = table_start + ((table_end - table_start) / 2);
-        const auto &mv = mesh_->m_Entries[pivot->object_id_].first.vertices_;
-        float split = std::max(std::max(mv[pivot->t1_].pos_[split_dimension],
-                                        mv[pivot->t2_].pos_[split_dimension]),
-                               mv[pivot->t3_].pos_[split_dimension]);
+        std::vector<TriangleIndices>::iterator pivot;
+        float split;
 
+        if (sah_resolution_ > 0)
+            pivot = SurfaceAreaHeuristic(table_start, table_end, split_dimension);
+        else
+            // sah disabled, just use mean
+            pivot = table_start + ((table_end - table_start) / 2);
+
+        const std::vector<Vertex> &mv =
+            mesh_->m_Entries[pivot->object_id_].first.vertices_;
+
+        split = std::max(std::max(mv[pivot->t1_].pos_[split_dimension],
+                                  mv[pivot->t2_].pos_[split_dimension]),
+                         mv[pivot->t3_].pos_[split_dimension]);
+
+        //        log_.Info() << "Split at " << split;
+        //
+        //        {
+        //            auto pivot = table_start + ((table_end - table_start) / 2);
+        //            const std::vector<Vertex> &mv =
+        //                mesh_->m_Entries[pivot->object_id_].first.vertices_;
+        //
+        //            split = std::max(std::max(mv[pivot->t1_].pos_[split_dimension],
+        //                                      mv[pivot->t2_].pos_[split_dimension]),
+        //                             mv[pivot->t3_].pos_[split_dimension]);
+        //
+        //            log_.Info() << "Mean would have split at " << split;
+        //        }
+        //
         std::vector<TriangleIndices> carry_left, carry_right;
 
         // see Implementation Note 2
@@ -288,6 +412,14 @@ RayCaster::CheckKdLeaf(const glm::vec3 &lower_bound, const glm::vec3 &upper_boun
     }
 
     return intersection_so_far;
+}
+
+float RayCaster::TriangleMax(int dim, const TriangleIndices &i1)
+{
+    const auto &mv = mesh_->m_Entries[i1.object_id_].first.vertices_;
+
+    return std::max(std::max(mv[i1.t1_].pos_[dim], mv[i1.t2_].pos_[dim]),
+                    mv[i1.t3_].pos_[dim]);
 }
 
 bool RayCaster::CompareIndices(int dim, bool min, const TriangleIndices &i1,

@@ -45,7 +45,8 @@ ViewRayCaster::ViewRayCaster(const Scene &scene)
               Config::inst().GetOption<bool>("interactive") ? 0 : SDL_WINDOW_HIDDEN),
       renderer_(window_, -1, SDL_RENDERER_SOFTWARE),
       tex_(renderer_, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, rx_, ry_),
-      raytracer_surface_(new uint8_t[rx_ * ry_ * 4]), pathtracer_(scene)
+      raytracer_surface_(new uint8_t[rx_ * ry_ * 4]),
+      sky_color_(Config::inst().GetOption<glm::vec3>("sky")), pathtracer_(scene)
 {
 }
 
@@ -90,10 +91,10 @@ void ViewRayCaster::TakePicture(glm::vec3 camera_pos, glm::mat4 mvp, const Scene
                 }
                 else
                 {
-                    b = 0;
-                    g = 0;
-                    r = 0;
-                    a = 0;
+                    b = int(sky_color_.x * 255.0f);
+                    g = int(sky_color_.y * 255.0f);
+                    r = int(sky_color_.z * 255.0f);
+                    a = 0xff;
                 }
 
                 uint8_t *target_pixel = raytracer_surface_ + y * rx_ * 4 + x * 4;
