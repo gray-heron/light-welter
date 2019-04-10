@@ -1,0 +1,12 @@
+# Test view scene: in OBJ format coords righthanded, CCW faces
+conference.obj
+conference.png
+1
+1280 800
+1319.429321 519 -712.340210
+1318.876465 518.657104 -711.580750
+0 1 0
+1
+L 541 576 400 255 255 255 15000
+L 0 576 400 255 255 255 15000
+L -541 576 400 255 255 255 15000
