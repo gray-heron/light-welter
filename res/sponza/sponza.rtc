@@ -1,0 +1,10 @@
+# Test view scene: in OBJ format coords righthanded, CCW faces
+sponza.obj
+sponza.png
+1
+1280 800
+-1.911081 9.370991 0.609589
+-0.942019 9.172321 0.463130
+0 1 0
+1
+L 4.853999 13.320211 0.333949 255 255 255 3

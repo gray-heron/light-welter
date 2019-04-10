@@ -6,6 +6,8 @@
 #include "exceptions.h"
 #include "texture.h"
 
+int modulo(int x, int y) { return (x % y + y) % y; }
+
 glm::vec3 GetPixel(SDL_Surface *surface, int x, int y)
 {
     int bpp = surface->format->BytesPerPixel;
@@ -20,7 +22,7 @@ glm::vec3 GetPixel(SDL_Surface *surface, int x, int y)
         break;
 
     case 2:
-        ASSERT(0);
+        STRONG_ASSERT(0);
         break;
 
     case 3:
@@ -34,7 +36,7 @@ glm::vec3 GetPixel(SDL_Surface *surface, int x, int y)
         break;
 
     default:
-        ASSERT(0);
+        STRONG_ASSERT(0);
         return glm::vec3();
     }
 }
@@ -49,10 +51,13 @@ Texture::Texture(GLenum texture_target, glm::vec3 diff_color,
     if (!boost::filesystem::exists(file_name))
         Log("TextureReader").Error() << "Texture: " << file_name << " does not exist!";
 
-    ASSERT(surface_.GetSize().x > 0);
+    STRONG_ASSERT(surface_.GetSize().x > 0);
+}
 
+void Texture::SetupForOpenGL()
+{
     glGenTextures(1, &texture_obj_);
-    glBindTexture(texture_target, texture_obj_);
+    glBindTexture(texture_target_, texture_obj_);
 
     int mode;
     switch (surface_.Get()->format->BytesPerPixel)
@@ -65,7 +70,7 @@ Texture::Texture(GLenum texture_target, glm::vec3 diff_color,
         break;
 
     default:
-        ASSERT(0);
+        STRONG_ASSERT(0);
     }
 
     glBindTexture(texture_target_, texture_obj_);
@@ -84,11 +89,11 @@ void Texture::Bind(GLenum texture_unit)
     glBindTexture(texture_target_, texture_obj_);
 }
 
-glm::vec3 Texture::GetPixel(glm::vec2 uv)
+glm::vec3 Texture::GetPixel(glm::vec2 uv) const
 {
     int x = uv.x * w_;
     int y = uv.y * h_;
-    return ::GetPixel(surface_.Get(), x, y) * diffuse_factor_;
+    return ::GetPixel(surface_.Get(), modulo(x, w_), modulo(y, h_)) * diffuse_factor_;
 }
 
 Texture::~Texture()

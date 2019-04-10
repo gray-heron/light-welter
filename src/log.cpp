@@ -42,6 +42,7 @@ std::shared_ptr<spdlog::logger> LoggingSingleton::RegisterModule(std::string nam
     std::shared_ptr<spdlog::logger> ret =
         std::make_shared<spdlog::logger>(name, std::begin(sinks_), std::end(sinks_));
 
+    ret->flush_on(spdlog::level::warn);
     handles_.push_back(ret);
     return ret;
 }
@@ -63,7 +64,7 @@ LogStream::~LogStream()
 
 Log::Log(std::string module_name) : module_(module_name) {}
 
-std::shared_ptr<spdlog::logger> Log::GetHandle()
+std::shared_ptr<spdlog::logger> Log::GetHandle() const
 {
     auto ret = handle_.lock();
     if (!ret)
@@ -74,10 +75,10 @@ std::shared_ptr<spdlog::logger> Log::GetHandle()
     return ret;
 }
 
-LogStream Log::Debug() { return LogStream(GetHandle(), spdlog::level::debug); }
+LogStream Log::Debug() const { return LogStream(GetHandle(), spdlog::level::debug); }
 
-LogStream Log::Info() { return LogStream(GetHandle(), spdlog::level::info); }
+LogStream Log::Info() const { return LogStream(GetHandle(), spdlog::level::info); }
 
-LogStream Log::Warning() { return LogStream(GetHandle(), spdlog::level::warn); }
+LogStream Log::Warning() const { return LogStream(GetHandle(), spdlog::level::warn); }
 
-LogStream Log::Error() { return LogStream(GetHandle(), spdlog::level::err); }
+LogStream Log::Error() const { return LogStream(GetHandle(), spdlog::level::err); }

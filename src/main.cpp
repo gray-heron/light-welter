@@ -1,3 +1,4 @@
+#include <csignal>
 #include <stdio.h>
 
 #include "config.h"
@@ -10,7 +11,6 @@ using std::string;
 int main(int argc, char **argv)
 {
     Scene scene;
-    SDL2pp::SDL sdl_(SDL_INIT_VIDEO);
 
     Log log("main");
     log.Info() << "Ray tracer demo";
@@ -35,16 +35,19 @@ int main(int argc, char **argv)
     Config::inst().DumpSettings();
 
     //====================
+    bool interactive = Config::inst().GetOption<bool>("interactive");
+    glm::vec3 ambient_rgb_ = Config::inst().GetOption<glm::vec3>("ambient_light");
 
-    ViewRaytracer vis_rt;
-    ViewOpenGL vis_gl;
+    if (!interactive)
+        putenv((char *)"SDL_VIDEODRIVER=dummy");
+    SDL2pp::SDL sdl_(SDL_INIT_VIDEO);
 
     if (scene.point_lights_.size() > 0)
-        scene.ambient_light_ = {0.18f, 0.18f, 0.18f};
+        scene.ambient_light_ = {ambient_rgb_};
     else
         scene.ambient_light_ = {1.0f, 1.0f, 1.0f};
 
-    scene.renderables_.push_back(new Mesh(Config::inst().GetOption<string>("scene")));
+    scene.mesh_ = std::make_unique<Mesh>(Config::inst().GetOption<string>("scene"));
     // scene.renderables_.push_back(new Mesh("res/view_test/cornell_box.obj"));
     /*
         scene.point_lights_.push_back({
@@ -57,27 +60,57 @@ int main(int argc, char **argv)
     //    glm::vec3(0.8f, 0.8f, 0.8f),
     //});
 
-    bool exit_requested = false;
-    while (!exit_requested)
-    {
-        vis_gl.Render(scene);
-        vis_rt.Render();
+    ViewRayCaster vis_rt(scene);
 
-        while (auto action = vis_gl.DequeueAction())
+    if (interactive)
+    {
+        ViewOpenGL vis_gl(
+            (scene.mesh_->GetUpperBound() - scene.mesh_->GetLowerBound()).x / 100.0f);
+
+        scene.mesh_->SetupForOpenGL();
+
+        bool exit_requested = false;
+        while (!exit_requested)
         {
-            switch (*action)
+            vis_gl.Render(scene);
+            vis_rt.Render();
+
+            while (auto action = vis_gl.DequeueAction())
             {
-            case ViewOpenGL::Exit:
-                exit_requested = true;
+                switch (*action)
+                {
+                case ViewOpenGL::Exit:
+                    exit_requested = true;
+                    break;
+                case ViewOpenGL::TakePicture:
+                    vis_rt.TakePicture(vis_gl.GetCameraPos(), vis_gl.GetMVP(), scene);
+                    break;
+                case ViewOpenGL::OneShot:
+                {
+                    auto inv_mvp = glm::inverse(vis_gl.GetMVP());
+                    glm::vec4 ray_r(0.0f, 0.0f, 1.0f, 1.0f);
+
+                    auto target = inv_mvp * ray_r;
+                    auto object_hit = vis_rt.pathtracer_.DebugTrace(
+                        vis_gl.GetCameraPos(), glm::normalize(target));
+
+                    if (object_hit)
+                        log.Info() << "Oneshot hit object " << *object_hit;
+                    else
+                        log.Info() << "Oneshot miss!";
+                }
                 break;
-            case ViewOpenGL::TakePicture:
-                vis_rt.TakePicture(vis_gl.GetCameraPos(), vis_gl.GetMVP(), scene);
-                break;
-            default:
-                ASSERT(0, "Action not implemented!")
+                default:
+                    STRONG_ASSERT(0, "Action not implemented!")
+                }
             }
         }
-    }
 
-    log.Info() << "Exit requested. Bye, bye.";
+        log.Info() << "Exit requested. Bye, bye.";
+    }
+    else
+    {
+        CameraManager camera_manager(1.0f);
+        vis_rt.TakePicture(camera_manager.GetCameraPos(), camera_manager.GetMVP(), scene);
+    }
 }

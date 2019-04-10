@@ -1,3 +1,8 @@
+
+# ==============================================================================
+# cmake setup
+# ==============================================================================
+
 cmake_minimum_required(VERSION 3.0)
 project(light-welter)
 
@@ -8,6 +13,8 @@ include(FindPkgConfig)
 
 enable_testing()
 
+# ==============================================================================
+# compiler setup
 # ==============================================================================
 
 set(CMAKE_CXX_STANDARD 14)
@@ -22,9 +29,7 @@ include_directories(${CMAKE_BINARY_DIR}/gen)
 include_directories(${CMAKE_BINARY_DIR}/dependencies/include)
 
 # ==============================================================================
-
-set(pugixml_DIR /usr/share/libpugixml-dev/cmake/)
-
+# external dependencies
 # ==============================================================================
 
 find_package(Threads)
@@ -50,8 +55,6 @@ ExternalProject_Add(glm-dependency
   CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/dependencies -DGLM_TEST_ENABLE=OFF -DBUILD_SHARED_LIBS=OFF
 )
 
-
-
 find_package(SDL2 REQUIRED)
 PKG_SEARCH_MODULE(SDL2IMAGE REQUIRED SDL2_image>=2.0.0)
 find_package(OpenGL REQUIRED)                                                          
@@ -65,7 +68,6 @@ link_directories(${ASSIMP_LIBRARY_DIRS})
 link_directories(${GLM_LIBRARY_DIRS})
 link_directories(${CMAKE_BINARY_DIR}/dependencies/lib)
 
-
 # ==============================================================================
 # resources
 # ==============================================================================
@@ -73,7 +75,13 @@ link_directories(${CMAKE_BINARY_DIR}/dependencies/lib)
 cmrc_add_resource_library(resources res/default_configuration.xml)
 
 # ==============================================================================
-# cmake targets
+# workarounds
+# ==============================================================================
+
+add_compile_options(-DGLM_FORCE_XYZW_ONLY)
+
+# ==============================================================================
+# build config
 # ==============================================================================
 
 set(SRCS_NOMAIN 
@@ -84,7 +92,8 @@ set(SRCS_NOMAIN
   src/texture.cpp
   src/view_raytracer.cpp
   src/view_opengl.cpp
-  src/raytracer.cpp
+  src/raycaster.cpp
+  src/pathtracer.cpp
   
   inc/config.h
   inc/exceptions.h
@@ -92,6 +101,9 @@ set(SRCS_NOMAIN
   inc/shader.h
   inc/mesh.h
   inc/texture.h
+  inc/pathtracer.h
+  inc/raycaster.h
+  inc/renderable.h
   inc/view_raytracer.h
   inc/view_opengl.h
   )

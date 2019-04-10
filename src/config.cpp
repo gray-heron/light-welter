@@ -31,7 +31,7 @@ boost::any ParseValue(const std::type_info &type_id, std::string value)
     {
         glm::vec3 ret;
         std::istringstream iss(value);
-        ASSERT(iss >> ret.x >> ret.y >> ret.z);
+        STRONG_ASSERT(iss >> ret.x >> ret.y >> ret.z);
         return ret;
     }
     if (type_id == typeid(bool))
@@ -52,8 +52,8 @@ Config::Config()
     pugi::xml_document doc;
     auto fs = cmrc::resources::get_filesystem();
     auto config_file = fs.open("res/default_configuration.xml");
-    ASSERT(doc.load_buffer(config_file.begin(), config_file.size()),
-           "Couldn't parse default configuration!");
+    STRONG_ASSERT(doc.load_buffer(config_file.begin(), config_file.size()),
+                  "Couldn't parse default configuration!");
     LoadXMLConfig(doc);
 }
 
@@ -76,36 +76,36 @@ std::vector<PointLight> Config::LoadRTC(std::string config_path)
     int in_int1, in_int2;
     std::istringstream in_ss;
 
-    ASSERT(std::getline(infile, line));
+    STRONG_ASSERT(std::getline(infile, line));
     log_.Info() << "RTC comment: \"" << line << "\"";
 
-    ASSERT(std::getline(infile, line));
+    STRONG_ASSERT(std::getline(infile, line));
     SetParameter("scene",
                  GetOption<std::string>("rtc_dir") + boost::trim_right_copy(line));
 
-    ASSERT(std::getline(infile, line));
+    STRONG_ASSERT(std::getline(infile, line));
     SetParameter("target_file",
                  GetOption<std::string>("rtc_dir") + boost::trim_right_copy(line));
 
-    ASSERT(std::getline(infile, line));
+    STRONG_ASSERT(std::getline(infile, line));
     SetParameter("recursion", ParseValue(typeid(int), line));
 
-    ASSERT(std::getline(infile, line));
+    STRONG_ASSERT(std::getline(infile, line));
     in_ss = std::istringstream(line);
-    ASSERT(in_ss >> in_int1 >> in_int2);
+    STRONG_ASSERT(in_ss >> in_int1 >> in_int2);
     SetParameter("resx", in_int1);
     SetParameter("resy", in_int2);
 
-    ASSERT(std::getline(infile, line));
+    STRONG_ASSERT(std::getline(infile, line));
     SetParameter("camera_pos", ParseValue(typeid(glm::vec3), line));
 
-    ASSERT(std::getline(infile, line));
+    STRONG_ASSERT(std::getline(infile, line));
     SetParameter("camera_lookat", ParseValue(typeid(glm::vec3), line));
 
-    ASSERT(std::getline(infile, line));
+    STRONG_ASSERT(std::getline(infile, line));
     SetParameter("camera_up", ParseValue(typeid(glm::vec3), line));
 
-    ASSERT(std::getline(infile, line));
+    STRONG_ASSERT(std::getline(infile, line));
     SetParameter("fov_factor", ParseValue(typeid(float), line));
 
     while (std::getline(infile, line))
@@ -118,8 +118,8 @@ std::vector<PointLight> Config::LoadRTC(std::string config_path)
         char c;
         float x, y, z, r, g, b, i;
 
-        ASSERT(iss >> c >> x >> y >> z >> r >> g >> b >> i);
-        ASSERT(c == 'L')
+        STRONG_ASSERT(iss >> c >> x >> y >> z >> r >> g >> b >> i);
+        STRONG_ASSERT(c == 'L')
         log_.Info() << c << x << y << z << r << g << b << i;
         pl.position = glm::vec3(x, y, z);
         pl.intensity_rgb = (glm::vec3(r, g, b) / 255.0f) * (i / 100.0f);
@@ -205,12 +205,12 @@ void Config::LoadXMLConfig(pugi::xml_document &doc)
             else if (static_cast<string>(child.attribute("type").as_string()) == "vec3")
                 value = ParseValue(typeid(glm::vec3), child.text().as_string());
             else
-                ASSERT(0)
+                STRONG_ASSERT(0)
         }
         else
         {
             std::string wtf = child.name();
-            ASSERT(params_.find(child.name()) != params_.end());
+            STRONG_ASSERT(params_.find(child.name()) != params_.end());
             value = ParseValue(params_[child.name()].type(), child.text().as_string());
         }
 

@@ -34,29 +34,29 @@ You should see two windows: one for the opengl preview and one for the raytracer
 
 For now please only use "standard" resolutions, i.e. 640x480 instead of 600x400.
 
+### Important options
+
+ - --interactive=0 ; disable gui
+ - --iso=3000 ; change camera sensitivity
+ - --threads=8 ; threadpool size
+
 ### Examples
->./build/demo_app res/view_test/view_test.rtc 
 
-![alt text](res/view_test/view_test.png)
-
->./build/demo_app res/view_test/cornell.rtc
+>./build/demo_app res/view_test/cornell.rtc --specular_reflection_factor=0.15
 
 ![alt text](res/view_test/cornell.png)
 
->./build/demo_app res/view_test/cornell2.rtc
+>./build/demo_app res/sponza/sponza.rtc --specular_reflection_factor=0.0
 
-![alt text](res/view_test/cornell2.png)
+![alt text](res/sponza/sponza.png)
 
->./build/demo_app res/phoenix/phoenix.rtc
+>./build/demo_app res/conference/conference.rtc --specular_reflection_factor=0.05
+
+![alt text](res/conference/conference.png)
+
+>./build/demo_app res/phoenix/phoenix.rtc --specular_reflection_factor=0.1
 
 ![alt text](res/phoenix/phoenix.png)
-
->./build/demo_app res/phoenix/phoenix2.rtc
-
-![alt text](res/phoenix/phoenix2.png)
-
->./build/demo_app --resx=1280 --resy=800 res/rocks/rocks.rtc (scene not avaliable in the repo)
-![alt text](res/rocks/rocks.png)
 
 ## Other software used
 >http://ogldev.atspace.co.uk/index.html

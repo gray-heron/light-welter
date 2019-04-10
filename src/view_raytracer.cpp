@@ -38,28 +38,31 @@ void save_texture(std::string filename, SDL_Renderer *renderer, SDL_Texture *tex
     SDL_SetRenderTarget(renderer, target);
 }
 
-ViewRaytracer::ViewRaytracer()
+ViewRayCaster::ViewRayCaster(const Scene &scene)
     : rx_(Config::inst().GetOption<int>("resx")),
       ry_(Config::inst().GetOption<int>("resy")),
-      window_("Raytracer preview", rx_ + 30, SDL_WINDOWPOS_CENTERED, rx_, ry_, 0),
+      window_("RayCaster preview", rx_ + 30, SDL_WINDOWPOS_CENTERED, rx_, ry_,
+              Config::inst().GetOption<bool>("interactive") ? 0 : SDL_WINDOW_HIDDEN),
       renderer_(window_, -1, SDL_RENDERER_SOFTWARE),
-      tex_(renderer_, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, rx_, ry_),
-      raytracer_surface_(new uint8_t[rx_ * ry_ * 4]), raytracer_()
+      tex_(renderer_, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, rx_, ry_),
+      raytracer_surface_(new uint8_t[rx_ * ry_ * 4]),
+      sky_color_(Config::inst().GetOption<glm::vec3>("sky")), pathtracer_(scene)
 {
 }
 
-void ViewRaytracer::Render()
+void ViewRayCaster::Render()
 {
     renderer_.Clear();
     renderer_.Copy(tex_, NullOpt, NullOpt);
     renderer_.Present();
 }
 
-void ViewRaytracer::TakePicture(glm::vec3 camera_pos, glm::mat4 mvp, const Scene &scene)
+void ViewRayCaster::TakePicture(glm::vec3 camera_pos, glm::mat4 mvp, const Scene &scene)
 {
-    Log("RaytracerView").Info() << "Started taking picture.";
+    Log("RayCasterView").Info() << "Started taking picture.";
 
     auto inv_mvp = glm::inverse(mvp);
+    auto iso = Config::inst().GetOption<float>("iso");
 
     auto rt_func = [&](int x_start, int cols) -> void {
         for (int x = x_start; x < x_start + cols; x += 1)
@@ -70,9 +73,8 @@ void ViewRaytracer::TakePicture(glm::vec3 camera_pos, glm::mat4 mvp, const Scene
                 float yr = (float(y) - float(ry_ / 2)) / (float(ry_ / 2));
                 glm::vec4 ray_r(xr, -yr, 1, 1);
 
-                auto target = inv_mvp * ray_r;
-                auto intersection =
-                    raytracer_.Trace(camera_pos, glm::normalize(target), scene);
+                auto dir = inv_mvp * ray_r;
+                auto intersection = pathtracer_.Trace(camera_pos, glm::normalize(dir));
 
                 uint8_t b;
                 uint8_t g;
@@ -81,17 +83,18 @@ void ViewRaytracer::TakePicture(glm::vec3 camera_pos, glm::mat4 mvp, const Scene
 
                 if (intersection)
                 {
-                    b = float(0xff) * glm::min(intersection->diffuse.x, 1.0f);
-                    g = float(0xff) * glm::min(intersection->diffuse.y, 1.0f);
-                    r = float(0xff) * glm::min(intersection->diffuse.z, 1.0f);
+                    auto readout = iso * *intersection; // xd
+                    b = float(0xff) * glm::min(readout.x, 1.0f);
+                    g = float(0xff) * glm::min(readout.y, 1.0f);
+                    r = float(0xff) * glm::min(readout.z, 1.0f);
                     a = 0xff;
                 }
                 else
                 {
-                    b = 0;
-                    g = 0;
-                    r = 0;
-                    a = 0;
+                    b = int(sky_color_.x * 255.0f);
+                    g = int(sky_color_.y * 255.0f);
+                    r = int(sky_color_.z * 255.0f);
+                    a = 0xff;
                 }
 
                 uint8_t *target_pixel = raytracer_surface_ + y * rx_ * 4 + x * 4;
@@ -126,7 +129,7 @@ void ViewRaytracer::TakePicture(glm::vec3 camera_pos, glm::mat4 mvp, const Scene
         renderer_.Present();
     }
 
-    Log("RaytracerView").Info() << "Taking picture done. Saving to: "
+    Log("RayCasterView").Info() << "Taking picture done. Saving to: "
                                 << Config::inst().GetOption<std::string>("target_file");
     save_texture(Config::inst().GetOption<std::string>("target_file"), renderer_.Get(),
                  tex_.Get());

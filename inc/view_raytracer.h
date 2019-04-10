@@ -6,12 +6,13 @@
 #include <boost/optional/optional.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <inttypes.h>
 
 #include "log.h"
 #include "mesh.h"
-#include "raytracer.h"
+#include "pathtracer.h"
 
-class ViewRaytracer
+class ViewRayCaster
 {
   public:
     enum Action
@@ -27,13 +28,13 @@ class ViewRaytracer
     SDL2pp::Texture tex_;
 
     uint8_t *raytracer_surface_;
-
-    Raytracer raytracer_;
+    const glm::vec3 sky_color_;
+    Log log_{"ViewRayCaster"};
 
   public:
-    ViewRaytracer();
-
+    ViewRayCaster(const Scene &scene);
     void TakePicture(glm::vec3 camera_pos, glm::mat4 mvp, const Scene &scene);
     void Render();
-    Log log_{"ViewRaytracer"};
+
+    PathTracer pathtracer_;
 };

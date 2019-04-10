@@ -4,7 +4,7 @@
 
 #include <SDL2pp/SDL2pp.hh>
 
-class RaytracerView
+class RayCasterView
 {
   public:
     enum Action
