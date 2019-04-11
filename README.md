@@ -46,11 +46,11 @@ Tested on Ubuntu 18.04 running on Intel i5-4670. Compilled with clang60.
 
 Resolution 1280x720, one specular reflection + shadowrays.
 
-| Scene      | Triangles | Time with SAH | Time without SAH |
-| ---------- | --------- | ------------- | ---------------- |
-| Phoenix    | 2282      | 0m1.436s      | 0m2.123s         |
-| Sponza     | 66450     | 0m20.736      | 0m18.723s        |
-| Conference | 331179    | 0m47.176s     | 2m53.705s        |
+| Scene      | No. of lights | Triangles | Time with SAH | Time without SAH |
+| ---------- | ------------- | --------- | ------------- | ---------------- |
+| Phoenix    | 1             | 2282      | 0m1.436s      | 0m2.123s         |
+| Sponza     | 1             | 66450     | 0m20.736      | 0m18.723s        |
+| Conference | 3             | 331179    | 0m47.176s     | 2m53.705s        |
 
 ## Examples
 

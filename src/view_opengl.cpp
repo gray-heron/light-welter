@@ -26,11 +26,16 @@ CameraManager::CameraManager(float movement_sensitivity)
       ry_(Config::inst().GetOption<int>("resy")),
       camera_pos_(Config::inst().GetOption<glm::vec3>("camera_pos")),
       up_(Config::inst().GetOption<glm::vec3>("camera_up")),
-      fov_(65.0f / Config::inst().GetOption<float>("fov_factor")), pitch_(0.0f),
-      yaw_(0.0f), movement_sensitivity_(movement_sensitivity),
+      fov_(2.0f * std::atan(0.5f * Config::inst().GetOption<float>("yview")) / 3.14f *
+           180.0f),
+      pitch_(0.0f), yaw_(0.0f), movement_sensitivity_(movement_sensitivity),
       alt_look_at_(Config::inst().GetOption<glm::vec3>("camera_lookat") - camera_pos_),
       camera_lookat_(*alt_look_at_)
 {
+    Log("CameraManager").Info()
+        << "Field of view: " << fov_ << " "
+        << std::atan(0.5f * Config::inst().GetOption<float>("yview") / 3.14f * 180.0f);
+
     UpdateCamera();
 }
 

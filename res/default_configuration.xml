@@ -20,7 +20,7 @@
 
     <kdtree_max_triangles_in_leaf type="int">20</kdtree_max_triangles_in_leaf>
     <kdtree_max_depth type="int">20</kdtree_max_depth>
-    <sah_resolution type="int">0</sah_resolution>
+    <sah_resolution type="int">20</sah_resolution>
 
     <iso type="float">1200</iso>
     <specular_reflection_factor type="float">0.01</specular_reflection_factor>
@@ -33,5 +33,5 @@
     <camera_pos type="vec3">0 0 0</camera_pos>
     <camera_lookat type="vec3">1 0 0</camera_lookat>
     <camera_up type="vec3">0 1 0</camera_up>
-    <fov_factor type="float">1</fov_factor>
+    <yview type="float">1</yview>
 </configuration>

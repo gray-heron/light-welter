@@ -106,7 +106,7 @@ std::vector<PointLight> Config::LoadRTC(std::string config_path)
     SetParameter("camera_up", ParseValue(typeid(glm::vec3), line));
 
     STRONG_ASSERT(std::getline(infile, line));
-    SetParameter("fov_factor", ParseValue(typeid(float), line));
+    SetParameter("yview", ParseValue(typeid(float), line));
 
     while (std::getline(infile, line))
     {
