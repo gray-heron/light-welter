@@ -19,7 +19,7 @@ make -j4
 cd ..
 ```
 
-### Usage
+## Usage
 ```bash
 ./build/demo_app <rtc_file> [--<config_option_name>=<config_option_value>]*
 ```
@@ -40,7 +40,19 @@ For now please only use "standard" resolutions, i.e. 640x480 instead of 600x400.
  - --iso=3000 ; change camera sensitivity
  - --threads=8 ; threadpool size
 
-### Examples
+## Perforamce
+
+Tested on Ubuntu 18.04 running on Intel i5-4670. Compilled with clang60.
+
+Resolution 1280x720, one specular reflection + shadowrays.
+
+| Scene      | Triangles | Time with SAH | Time without SAH |
+| ---------- | --------- | ------------- | ---------------- |
+| Phoenix    | 2282      | 0m1.436s      | 0m2.123s         |
+| Sponza     | 66450     | 0m20.736      | 0m18.723s        |
+| Conference | 331179    | 0m47.176s     | 2m53.705s        |
+
+## Examples
 
 >./build/demo_app res/view_test/cornell.rtc --specular_reflection_factor=0.15
 

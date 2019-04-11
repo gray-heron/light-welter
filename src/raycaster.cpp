@@ -276,20 +276,6 @@ void RayCaster::KDTreeConstructStep(unsigned int position,
                                   mv[pivot->t2_].pos_[split_dimension]),
                          mv[pivot->t3_].pos_[split_dimension]);
 
-        //        log_.Info() << "Split at " << split;
-        //
-        //        {
-        //            auto pivot = table_start + ((table_end - table_start) / 2);
-        //            const std::vector<Vertex> &mv =
-        //                mesh_->m_Entries[pivot->object_id_].first.vertices_;
-        //
-        //            split = std::max(std::max(mv[pivot->t1_].pos_[split_dimension],
-        //                                      mv[pivot->t2_].pos_[split_dimension]),
-        //                             mv[pivot->t3_].pos_[split_dimension]);
-        //
-        //            log_.Info() << "Mean would have split at " << split;
-        //        }
-        //
         std::vector<TriangleIndices> carry_left, carry_right;
 
         // see Implementation Note 2
