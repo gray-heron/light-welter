@@ -40,7 +40,7 @@ For now please only use "standard" resolutions, i.e. 640x480 instead of 600x400.
  - --iso=3000 ; change camera sensitivity
  - --threads=8 ; threadpool size
 
-## Perforamce
+## Performance
 
 Tested on Ubuntu 18.04 running on Intel i5-4670. Compilled with clang60.
 
