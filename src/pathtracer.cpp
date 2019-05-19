@@ -1,5 +1,6 @@
 
 #include "pathtracer.h"
+#include "spectrum.h"
 
 glm::vec3 GetDiffuse(const Vertex &v1, const Vertex &v2, const Vertex &v3,
                      glm::vec3 bary_cords, const Texture &tex)
@@ -15,6 +16,7 @@ glm::vec3 GetDiffuse(const Vertex &v1, const Vertex &v2, const Vertex &v3,
 PathTracer::PathTracer(const Scene &scene)
     : scene_(scene), raycaster_(scene.mesh_),
       recursion_level_(Config::inst().GetOption<int>("recursion")),
+      max_reflections_(Config::inst().GetOption<int>("max_reflections")),
       specular_reflection_factor_(
           Config::inst().GetOption<float>("specular_reflection_factor"))
 {
@@ -28,9 +30,10 @@ glm::vec3 PathTracer::FIL(boost::optional<glm::vec3> light) const
         return glm::vec3(0.0f, 0.0f, 0.0f);
 }
 
-boost::optional<glm::vec3> PathTracer::Trace(glm::vec3 camera_pos, glm::vec3 dir) const
+glm::vec3 PathTracer::Trace(glm::vec3 camera_pos, glm::vec3 dir) const
 {
-    return Trace(camera_pos, dir, recursion_level_);
+    Sampler s;
+    return Trace(camera_pos, dir, true, glm::vec3(1.0f, 1.0f, 1.0f), s, recursion_level_);
 }
 
 boost::optional<int> PathTracer::DebugTrace(glm::vec3 camera_pos, glm::vec3 dir) const
@@ -41,75 +44,69 @@ boost::optional<int> PathTracer::DebugTrace(glm::vec3 camera_pos, glm::vec3 dir)
         return boost::none;
 }
 
-boost::optional<glm::vec3> PathTracer::Trace(glm::vec3 origin, glm::vec3 dir,
-                                             int32_t depth) const
+glm::vec3 PathTracer::Trace(glm::vec3 origin, glm::vec3 dir, bool include_emission,
+                            glm::vec3 beta, Sampler &sampler, int32_t depth) const
 {
     if (depth == -1)
-        return boost::none;
+        return glm::vec3();
 
-    if (auto intersection = raycaster_.Trace(origin, dir))
+    // RUSSION RULETTE
+
+    if (auto intersection_raw = raycaster_.Trace(origin, dir))
     {
-        glm::vec3 out_emission = glm::vec3(scene_.ambient_light_);
+        glm::vec3 ret(0.0f);
+        auto intersection = intersection_raw->first;
+        auto surface = intersection_raw->second;
+        auto &material = scene_.mesh_->GetMaterial(surface.object_id_);
 
-        TriangleIndices indices(intersection->second);
-        TriangleIntersection triangle_intersection(intersection->first);
+        float source_cosine = glm::abs(glm::dot<3, float, glm::qualifier::highp>(
+            dir, glm::normalize(intersection.normal_)));
 
-        const auto &vertices =
-            scene_.mesh_->m_Entries[indices.object_id_].first.vertices_;
-        const auto &texture = scene_.mesh_->m_Entries[indices.object_id_].second;
+        if (include_emission)
+            ret += material.Emission() * beta;
 
-        // diffuse
-        for (const auto &light : scene_.point_lights_)
+        for (const auto &light : scene_.area_lights_)
         {
-            float dist_to_light =
-                glm::length(light.position - triangle_intersection.global_pos_);
+            auto incoming_light = light.Sample(intersection.global_pos_, sampler);
 
-            if (auto shadowhit = raycaster_.Trace(
-                    triangle_intersection.global_pos_,
-                    glm::normalize(light.position - triangle_intersection.global_pos_)))
-                if (shadowhit->first.dist_ < dist_to_light)
-                    continue;
+            float light_cosine = glm::abs(glm::dot<3, float, glm::qualifier::highp>(
+                incoming_light.first - intersection.global_pos_,
+                glm::normalize(intersection.normal_)));
 
-            auto light_to_intersection =
-                glm::normalize(light.position - triangle_intersection.global_pos_);
+            auto shadowhit = raycaster_.Trace(
+                intersection.global_pos_,
+                glm::normalize(incoming_light.first - intersection.global_pos_));
 
-            auto angle_factor = glm::abs(glm::dot<3, float, glm::qualifier::highp>(
-                light_to_intersection, glm::normalize(triangle_intersection.normal_)));
+            float dist = glm::length(incoming_light.first - intersection.global_pos_);
 
-            auto distance_factor = 1.0f / (dist_to_light * dist_to_light);
+            //            STRONG_ASSERT(shadowhit.is_initialized());
 
-            out_emission += angle_factor * distance_factor * light.intensity_rgb;
+            if (shadowhit.is_initialized() && !(shadowhit->first.dist_ < dist))
+            {
+                float g = light_cosine * source_cosine / (dist * dist);
+
+                ret += material.BRDF(incoming_light.first, intersection.global_pos_,
+                                     origin, intersection.normal_) *
+                       incoming_light.second * beta * g * light.GetArea();
+            }
         }
 
-        if (texture)
+        for (int i = 0; i < max_reflections_; i++)
         {
-            out_emission *= GetDiffuse(vertices[indices.t1_], vertices[indices.t2_],
-                                       vertices[indices.t3_],
-                                       triangle_intersection.barycentric_pos_, *texture);
+            auto reflection = material.SampleF(intersection.global_pos_,
+                                               intersection.normal_, dir, sampler);
+
+            glm::vec3 new_beta = beta * reflection.radiance_ / reflection.pdf_;
+
+            ret += Trace(intersection.global_pos_, reflection.dir_,
+                         reflection.is_specular_, new_beta, sampler, depth - 1) /
+                   float(max_reflections_);
         }
 
-        // specular
-        if (depth > 0)
-        {
-            auto surface_to_source =
-                glm::normalize(origin - triangle_intersection.global_pos_);
-
-            auto surface_emission_dir =
-                2.0f *
-                    glm::dot<3, float, glm::qualifier::highp>(
-                        triangle_intersection.normal_, surface_to_source) *
-                    triangle_intersection.normal_ -
-                surface_to_source;
-
-            out_emission += FIL(Trace(triangle_intersection.global_pos_,
-                                      surface_emission_dir, depth - 1)) *
-                            specular_reflection_factor_;
-        }
-
-        return out_emission;
+        return ret;
     }
     else
     {
-        return boost::none;
+        return scene_.skybox_.Sample(dir);
     }
 }

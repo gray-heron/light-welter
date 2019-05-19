@@ -86,7 +86,7 @@ ViewOpenGL::ViewOpenGL(float movement_sensitivity)
     glewExperimental = GL_TRUE;
     STRONG_ASSERT(glewInit() == GLEW_OK);
 
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClearColor(0.3f, 0.3f, 0.3f, 0.3f);
 
     GLuint VertexArrayID;
     glGenVertexArrays(1, &VertexArrayID);

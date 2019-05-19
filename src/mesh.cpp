@@ -29,11 +29,8 @@ inline glm::mat4 aiMatrix4x4ToGlm(const aiMatrix4x4 &from)
 }
 
 Mesh::MeshEntry::MeshEntry(std::vector<Vertex> &&Vertices,
-                           std::vector<glm::u32> &&Indices, unsigned int MaterialIndex)
-    : vertices_(std::move(Vertices)), indices_(std::move(Indices))
-{
-    mat_index_ = MaterialIndex;
-};
+                           std::vector<glm::u32> &&Indices, Material &mat)
+    : vertices_(std::move(Vertices)), indices_(std::move(Indices)), material_(mat){};
 
 void Mesh::MeshEntry::SetupForOpenGL()
 {
@@ -46,86 +43,71 @@ void Mesh::MeshEntry::SetupForOpenGL()
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IB);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * indices_.size(),
                  &indices_[0], GL_STATIC_DRAW);
+
+    material_.SetupForOpenGL();
 }
 
 Mesh::MeshEntry::~MeshEntry()
 {
     // APPLY RULE OF FIVE
-    // FIXME I BEG YOU
+    // FIXME
     /*
     glDeleteBuffers(1, &VB);
     glDeleteBuffers(1, &IB);
     */
 }
 
-Mesh::Mesh(std::string filename)
+Mesh::Mesh(std::string filename, Scene &scene)
     : lower_bound_(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(),
                    std::numeric_limits<float>::max()),
       upper_bound_(std::numeric_limits<float>::min(), std::numeric_limits<float>::min(),
                    std::numeric_limits<float>::min())
 {
-    const aiScene *pScene = importer_.ReadFile(
+    const aiScene *ai_scene = importer_.ReadFile(
         filename.c_str(), aiProcess_Triangulate | aiProcess_GenSmoothNormals |
                               aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices);
 
-    STRONG_ASSERT(pScene,
+    STRONG_ASSERT(ai_scene,
                   "Error parsing " + filename + " : " + importer_.GetErrorString());
-    STRONG_ASSERT(InitFromScene(pScene, filename));
+
+    std::string::size_type slash = filename.find_last_of("/");
+    std::string dir;
+
+    log_.Info() << "Scene has textures? " << ai_scene->HasTextures();
+    log_.Info() << "Scene has lights? " << ai_scene->HasLights();
+
+    if (slash == std::string::npos)
+        dir = ".";
+    else if (slash == 0)
+        dir = "/";
+    else
+        dir = filename.substr(0, slash);
+
+    for (unsigned int i = 0; i < ai_scene->mNumMaterials; i++)
+        materials_.emplace_back(ai_scene->mMaterials[i], dir);
+
+    for (unsigned int i = 0; i < ai_scene->mNumMeshes; i++)
+    {
+        auto &material = materials_[ai_scene->mMeshes[i]->mMaterialIndex];
+        submeshes_.emplace_back(
+            InitMesh(ai_scene->mMeshes[i], scene.area_lights_, material));
+    }
+
+    scene_ = ai_scene;
 }
 
 Mesh::~Mesh() {}
 
 void Mesh::SetupForOpenGL()
 {
-    for (auto &submesh : m_Entries)
+    for (auto &submesh : submeshes_)
     {
-        submesh.first.SetupForOpenGL();
-
-        if (submesh.second)
-            submesh.second->SetupForOpenGL();
+        submesh.SetupForOpenGL();
     }
 }
 
-bool Mesh::InitFromScene(const aiScene *pScene, const std::string &Filename)
-{
-    // Extract the directory part from the file name
-    std::string::size_type SlashIndex = Filename.find_last_of("/");
-    std::string Dir;
-    materials_ = std::make_unique<boost::optional<Texture>[]>(pScene->mNumMaterials);
-
-    log_.Info() << "Scene has textures? " << pScene->HasTextures();
-    log_.Info() << "Scene has lights? " << pScene->HasLights();
-
-    if (SlashIndex == std::string::npos)
-    {
-        Dir = ".";
-    }
-    else if (SlashIndex == 0)
-    {
-        Dir = "/";
-    }
-    else
-    {
-        Dir = Filename.substr(0, SlashIndex);
-    }
-
-    for (unsigned int i = 0; i < pScene->mNumMaterials; i++)
-    {
-        InitMaterial(i, pScene->mMaterials[i], Dir);
-    }
-
-    for (unsigned int i = 0; i < pScene->mNumMeshes; i++)
-    {
-        m_Entries.emplace_back(InitMesh(pScene->mMeshes[i]),
-                               materials_[pScene->mMeshes[i]->mMaterialIndex]);
-    }
-
-    scene_ = pScene;
-
-    return true;
-}
-
-Mesh::MeshEntry Mesh::InitMesh(const aiMesh *mesh)
+Mesh::MeshEntry Mesh::InitMesh(const aiMesh *mesh, std::vector<AreaLight> &lights,
+                               const Material &material)
 {
     std::vector<Vertex> Vertices;
     std::vector<glm::u32> Indices;
@@ -161,42 +143,17 @@ Mesh::MeshEntry Mesh::InitMesh(const aiMesh *mesh)
         Indices.push_back(Face.mIndices[0]);
         Indices.push_back(Face.mIndices[1]);
         Indices.push_back(Face.mIndices[2]);
-    }
 
-    return MeshEntry(std::move(Vertices), std::move(Indices), mesh->mMaterialIndex);
-}
-
-void Mesh::InitMaterial(int index, const aiMaterial *material, std::string dir)
-{
-    aiColor3D diff_color;
-    material->Get(AI_MATKEY_COLOR_DIFFUSE, diff_color);
-    auto glm_diff_color = glm::vec3(diff_color.r, diff_color.g, diff_color.b);
-
-    if (material->GetTextureCount(aiTextureType_DIFFUSE) > 0)
-    {
-        aiString Path;
-
-        if (material->GetTexture(aiTextureType_DIFFUSE, 0, &Path, NULL, NULL, NULL, NULL,
-                                 NULL) == AI_SUCCESS)
+        if (material.IsEmissive())
         {
-            std::string FullPath = dir + "/" + Path.data;
-            materials_[index].emplace(GL_TEXTURE_2D, glm_diff_color, FullPath);
-
-            log_.Info() << "Loaded texture " << FullPath;
-            return;
+            lights.emplace_back(Vertices[Face.mIndices[0]].pos_,
+                                Vertices[Face.mIndices[1]].pos_,
+                                Vertices[Face.mIndices[2]].pos_, material);
         }
     }
-    else
-    {
-        log_.Warning() << "No diffuse texture found!";
-        materials_[index].emplace(GL_TEXTURE_2D, glm_diff_color, "res/fail.png");
-        return;
-    }
 
-    // fixme
-    STRONG_ASSERT(0);
-    while (1)
-        ;
+    return MeshEntry(std::move(Vertices), std::move(Indices),
+                     materials_[mesh->mMaterialIndex]);
 }
 
 void Mesh::RenderByOpenGL(OpenGLRenderingContext context, aiNode *node)
@@ -212,9 +169,9 @@ void Mesh::RenderByOpenGL(OpenGLRenderingContext context, aiNode *node)
 
     for (unsigned int i = 0; i < node->mNumMeshes; i++)
     {
-        auto &obj = m_Entries[node->mMeshes[i]];
+        auto &obj = submeshes_[node->mMeshes[i]];
 
-        glBindBuffer(GL_ARRAY_BUFFER, obj.first.VB);
+        glBindBuffer(GL_ARRAY_BUFFER, obj.VB);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                               (const GLvoid *)offsetof(Vertex, pos_));
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
@@ -222,23 +179,12 @@ void Mesh::RenderByOpenGL(OpenGLRenderingContext context, aiNode *node)
         glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                               (const GLvoid *)offsetof(Vertex, norm_));
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, obj.first.IB);
-
-        auto dc = obj.second->diffuse_factor_;
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, obj.IB);
 
         glUniformMatrix4fv(context.mvp_id_, 1, GL_FALSE, &context.vp[0][0]);
-        glUniform3f(context.diffuse_id_, dc.x, dc.y, dc.z);
 
-        if (auto &texture = obj.second)
-        {
-            texture->Bind(GL_TEXTURE0);
-        }
-        else
-        {
-            log_.Warning() << "Texture missing!";
-        }
-
-        glDrawElements(GL_TRIANGLES, obj.first.indices_.size(), GL_UNSIGNED_INT, 0);
+        obj.material_.BindForOpenGL(context, GL_TEXTURE0);
+        glDrawElements(GL_TRIANGLES, obj.indices_.size(), GL_UNSIGNED_INT, 0);
     }
 
     glDisableVertexAttribArray(0);
@@ -249,6 +195,11 @@ void Mesh::RenderByOpenGL(OpenGLRenderingContext context, aiNode *node)
     {
         RenderByOpenGL(context, node->mChildren[i]);
     }
+}
+
+Material &Mesh::GetMaterial(uint32_t obj_index_)
+{
+    return submeshes_[obj_index_].material_;
 }
 
 glm::vec3 Mesh::GetUpperBound() { return upper_bound_; }

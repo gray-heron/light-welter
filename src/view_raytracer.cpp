@@ -3,6 +3,7 @@
 #include <SDL2/SDL_image.h>
 
 #include "config.h"
+#include "sampler.h"
 #include "view_raytracer.h"
 
 using namespace SDL2pp;
@@ -64,38 +65,43 @@ void ViewRayCaster::TakePicture(glm::vec3 camera_pos, glm::mat4 mvp, const Scene
     auto inv_mvp = glm::inverse(mvp);
     auto iso = Config::inst().GetOption<float>("iso");
 
+    float pixel_step_x = 1.0f / float(rx_ / 2);
+    float pixel_step_y = 1.0f / float(ry_ / 2);
+
+    int samples_per_pixel = Config::inst().GetOption<int>("samples_per_pixel");
+
     auto rt_func = [&](int x_start, int cols) -> void {
+        Sampler sampler;
+
         for (int x = x_start; x < x_start + cols; x += 1)
         {
             for (unsigned int y = 0; y < ry_; y += 1)
             {
-                float xr = (float(x) - float(rx_ / 2)) / (float(rx_ / 2));
-                float yr = (float(y) - float(ry_ / 2)) / (float(ry_ / 2));
-                glm::vec4 ray_r(xr, -yr, 1, 1);
+                glm::vec3 value = glm::vec3();
 
-                auto dir = inv_mvp * ray_r;
-                auto intersection = pathtracer_.Trace(camera_pos, glm::normalize(dir));
+                for (int s = 0; s < samples_per_pixel; s++)
+                {
+                    float xr = (float(x) - float(rx_ / 2)) / (float(rx_ / 2));
+                    float yr = (float(y) - float(ry_ / 2)) / (float(ry_ / 2));
+
+                    float deviation_x = (sampler.Sample() - 0.5f) * pixel_step_x;
+                    float deviation_y = (sampler.Sample() - 0.5f) * pixel_step_y;
+
+                    glm::vec4 ray_r(xr + deviation_x, -yr + deviation_y, 1, 1);
+                    auto dir = inv_mvp * ray_r;
+                    value += pathtracer_.Trace(camera_pos, glm::normalize(dir));
+                }
 
                 uint8_t b;
                 uint8_t g;
                 uint8_t r;
                 uint8_t a;
 
-                if (intersection)
-                {
-                    auto readout = iso * *intersection; // xd
-                    b = float(0xff) * glm::min(readout.x, 1.0f);
-                    g = float(0xff) * glm::min(readout.y, 1.0f);
-                    r = float(0xff) * glm::min(readout.z, 1.0f);
-                    a = 0xff;
-                }
-                else
-                {
-                    b = int(sky_color_.x * 255.0f);
-                    g = int(sky_color_.y * 255.0f);
-                    r = int(sky_color_.z * 255.0f);
-                    a = 0xff;
-                }
+                auto readout = iso * value / float(samples_per_pixel);
+                b = float(0xff) * glm::min(readout.x, 1.0f);
+                g = float(0xff) * glm::min(readout.y, 1.0f);
+                r = float(0xff) * glm::min(readout.z, 1.0f);
+                a = 0xff;
 
                 uint8_t *target_pixel = raytracer_surface_ + y * rx_ * 4 + x * 4;
 

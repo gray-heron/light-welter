@@ -112,23 +112,23 @@ RayCaster::RayCaster(std::shared_ptr<Mesh> mesh)
     std::vector<TriangleIndices> indices_vector;
 
     uint16_t submesh_id = 0;
-    for (auto submesh : mesh_->m_Entries)
+    for (auto submesh : mesh_->submeshes_)
     {
-        STRONG_ASSERT(submesh.first.indices_.size() % 3 == 0);
-        log_.Info() << "Loading submesh with " << submesh.first.indices_.size() / 3
+        STRONG_ASSERT(submesh.indices_.size() % 3 == 0);
+        log_.Info() << "Loading submesh with " << submesh.indices_.size() / 3
                     << " triangles.";
 
-        for (unsigned int iid = 0; iid < submesh.first.indices_.size(); iid += 3)
+        for (unsigned int iid = 0; iid < submesh.indices_.size(); iid += 3)
         {
-            indices_vector.emplace_back(submesh.first.indices_[iid + 0],
-                                        submesh.first.indices_[iid + 1],
-                                        submesh.first.indices_[iid + 2], submesh_id);
+            indices_vector.emplace_back(submesh.indices_[iid + 0],
+                                        submesh.indices_[iid + 1],
+                                        submesh.indices_[iid + 2], submesh_id);
         }
 
         submesh_id++;
     }
 
-    log_.Info() << mesh_->m_Entries.size() << " submeshes loaded, "
+    log_.Info() << mesh_->submeshes_.size() << " submeshes loaded, "
                 << indices_vector.size() << " triangles in total.";
     log_.Info() << "Constructing KD-tree...";
 
@@ -182,8 +182,7 @@ RayCaster::SurfaceAreaHeuristic(std::vector<TriangleIndices>::iterator left,
             if (iter == right)
                 break;
 
-            const std::vector<Vertex> &mv =
-                mesh_->m_Entries[iter->object_id_].first.vertices_;
+            const std::vector<Vertex> &mv = mesh_->submeshes_[iter->object_id_].vertices_;
 
             float current_area =
                 TriangleArea(mv[iter->t1_], mv[iter->t2_], mv[iter->t3_]);
@@ -269,8 +268,7 @@ void RayCaster::KDTreeConstructStep(unsigned int position,
             // sah disabled, just use mean
             pivot = table_start + ((table_end - table_start) / 2);
 
-        const std::vector<Vertex> &mv =
-            mesh_->m_Entries[pivot->object_id_].first.vertices_;
+        const std::vector<Vertex> &mv = mesh_->submeshes_[pivot->object_id_].vertices_;
 
         split = std::max(std::max(mv[pivot->t1_].pos_[split_dimension],
                                   mv[pivot->t2_].pos_[split_dimension]),
@@ -378,7 +376,7 @@ RayCaster::CheckKdLeaf(const glm::vec3 &lower_bound, const glm::vec3 &upper_boun
 
     for (int i = indices_start_index; i < indices_start_index + leaf.indices_no_; i += 1)
     {
-        const auto &mv = mesh_->m_Entries[indices_[i].object_id_].first.vertices_;
+        const auto &mv = mesh_->submeshes_[indices_[i].object_id_].vertices_;
         const auto &vertex1 = mv[indices_[i].t1_];
         const auto &vertex2 = mv[indices_[i].t2_];
         const auto &vertex3 = mv[indices_[i].t3_];
@@ -402,7 +400,7 @@ RayCaster::CheckKdLeaf(const glm::vec3 &lower_bound, const glm::vec3 &upper_boun
 
 float RayCaster::TriangleMax(int dim, const TriangleIndices &i1)
 {
-    const auto &mv = mesh_->m_Entries[i1.object_id_].first.vertices_;
+    const auto &mv = mesh_->submeshes_[i1.object_id_].vertices_;
 
     return std::max(std::max(mv[i1.t1_].pos_[dim], mv[i1.t2_].pos_[dim]),
                     mv[i1.t3_].pos_[dim]);
@@ -411,8 +409,8 @@ float RayCaster::TriangleMax(int dim, const TriangleIndices &i1)
 bool RayCaster::CompareIndices(int dim, bool min, const TriangleIndices &i1,
                                const TriangleIndices &i2) const
 {
-    const auto &mv1 = mesh_->m_Entries[i1.object_id_].first.vertices_;
-    const auto &mv2 = mesh_->m_Entries[i2.object_id_].first.vertices_;
+    const auto &mv1 = mesh_->submeshes_[i1.object_id_].vertices_;
+    const auto &mv2 = mesh_->submeshes_[i2.object_id_].vertices_;
 
     if (min)
         return std::min(std::min(mv1[i1.t1_].pos_[dim], mv1[i1.t2_].pos_[dim]),
@@ -429,7 +427,7 @@ bool RayCaster::CompareIndices(int dim, bool min, const TriangleIndices &i1,
 bool RayCaster::CompareIndicesToAAPlane(int dim, bool min, const TriangleIndices &i1,
                                         float plane) const
 {
-    const auto &mv1 = mesh_->m_Entries[i1.object_id_].first.vertices_;
+    const auto &mv1 = mesh_->submeshes_[i1.object_id_].vertices_;
 
     if (min)
         return std::min(std::min(mv1[i1.t1_].pos_[dim], mv1[i1.t2_].pos_[dim]),

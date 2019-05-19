@@ -1,18 +1,15 @@
 
 #pragma once
-#include <GL/glew.h>
-#include <assimp/scene.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <list>
-#include <memory>
-#include <vector>
 
 #include <string>
 
+#include "lights.h"
 #include "log.h"
+#include "material.h"
 #include "renderable.h"
 #include "texture.h"
+
+class Scene;
 
 struct Vertex
 {
@@ -27,37 +24,38 @@ class Mesh : public Renderable
     struct MeshEntry
     {
         MeshEntry(std::vector<Vertex> &&Vertices, std::vector<glm::u32> &&Indices,
-                  unsigned int MaterialIndex);
+                  Material &mat);
+
         ~MeshEntry();
 
         void SetupForOpenGL();
-
         GLuint VB;
         GLuint IB;
-        unsigned int mat_index_;
 
         const std::vector<Vertex> vertices_;
         const std::vector<glm::u32> indices_;
+        Material &material_;
     };
 
-    Mesh(std::string filename);
+    Mesh(std::string filename, Scene &scene);
     virtual ~Mesh();
 
     void RenderByOpenGL(OpenGLRenderingContext context, aiNode *node = nullptr) override;
     void SetupForOpenGL();
 
-    std::unique_ptr<boost::optional<Texture>[]> materials_;
-    std::vector<std::pair<MeshEntry, boost::optional<Texture> &>> m_Entries;
+    std::vector<MeshEntry> submeshes_;
+    Material &GetMaterial(uint32_t obj_index_);
 
     glm::vec3 GetUpperBound();
     glm::vec3 GetLowerBound();
 
   private:
-    bool InitFromScene(const aiScene *pScene, const std::string &Filename);
-    MeshEntry InitMesh(const aiMesh *mesh);
-    void InitMaterial(int index, const aiMaterial *material, std::string dir);
+    MeshEntry InitMesh(const aiMesh *mesh, std::vector<AreaLight> &lights,
+                       const Material &material);
 
     const aiScene *scene_;
+
+    std::vector<MaterialFromAssimp> materials_;
     Assimp::Importer importer_;
     glm::vec3 lower_bound_;
     glm::vec3 upper_bound_;

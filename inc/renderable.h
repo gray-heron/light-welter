@@ -7,16 +7,13 @@
 #include <glm/glm.hpp>
 #include <vector>
 
+#include "material.h"
+#include "sampler.h"
+
 struct Intersection
 {
     glm::vec3 position;
     glm::vec3 diffuse;
-};
-
-struct PointLight
-{
-    glm::vec3 position;
-    glm::vec3 intensity_rgb;
 };
 
 struct OpenGLRenderingContext
@@ -26,13 +23,6 @@ struct OpenGLRenderingContext
     GLuint mvp_id_;
     GLuint diffuse_id_;
 
-    boost::optional<const std::vector<PointLight> &> lights_;
-    glm::vec3 ambient_;
-};
-
-struct RaytracingContext
-{
-    boost::optional<const std::vector<PointLight> &> lights_;
     glm::vec3 ambient_;
 };
 
