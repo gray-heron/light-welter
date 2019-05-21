@@ -4,8 +4,8 @@
     <verbose type="bool">true</verbose>
     <gui type="bool">true</gui>
 
-    <resx type="int">1280</resx>
-    <resy type="int">800</resy>
+    <resx type="int">640</resx>
+    <resy type="int">480</resy>
 
     <threads type="int">4</threads>
     <cols_per_thread type="int">4</cols_per_thread>
@@ -22,14 +22,18 @@
     <kdtree_max_depth type="int">20</kdtree_max_depth>
     <sah_resolution type="int">20</sah_resolution>
 
-    <iso type="float">1200</iso>
+    <iso type="float">8</iso>
     <specular_reflection_factor type="float">0.01</specular_reflection_factor>
     <ambient_light type="vec3">0.0002 0.0002 0.0002</ambient_light>
     <sky type="vec3">0.0 0.0 0.1</sky>
 
     <scene type="string"></scene>
     <target_file type="string"></target_file>
-    <recursion type="int">1</recursion>
+
+    <recursion type="int">2</recursion>
+    <max_reflections type="int">2</max_reflections>
+    <samples_per_pixel type="int">120</samples_per_pixel>
+
     <camera_pos type="vec3">0 0 0</camera_pos>
     <camera_lookat type="vec3">1 0 0</camera_lookat>
     <camera_up type="vec3">0 1 0</camera_up>

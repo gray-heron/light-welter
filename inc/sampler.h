@@ -15,4 +15,5 @@ class Sampler
     float Sample();
     std::pair<float, float> SamplePair();
     glm::vec3 SampleDirection();
+    glm::vec3 SampleDirection(glm::vec3 normal);
 };

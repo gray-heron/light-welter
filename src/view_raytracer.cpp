@@ -1,4 +1,5 @@
 
+#include <OpenEXR/ImfRgbaFile.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 
@@ -25,7 +26,7 @@ std::string S(glm::vec4 in)
 }
 
 // https://stackoverflow.com/questions/34255820/save-sdl-texture-to-file
-void save_texture(std::string filename, SDL_Renderer *renderer, SDL_Texture *texture)
+void SaveTexture(std::string filename, SDL_Renderer *renderer, SDL_Texture *texture)
 {
     SDL_Texture *target = SDL_GetRenderTarget(renderer);
     SDL_SetRenderTarget(renderer, texture);
@@ -61,6 +62,7 @@ void ViewRayCaster::Render()
 void ViewRayCaster::TakePicture(glm::vec3 camera_pos, glm::mat4 mvp, const Scene &scene)
 {
     Log("RayCasterView").Info() << "Started taking picture.";
+    Imf::Rgba *buffer = new Imf::Rgba[rx_ * ry_];
 
     auto inv_mvp = glm::inverse(mvp);
     auto iso = Config::inst().GetOption<float>("iso");
@@ -109,6 +111,12 @@ void ViewRayCaster::TakePicture(glm::vec3 camera_pos, glm::mat4 mvp, const Scene
                 *(uint32_t *)target_pixel += (uint32_t)g << 8;
                 *(uint32_t *)target_pixel += (uint32_t)b << 16;
                 *(uint32_t *)target_pixel += (uint32_t)a << 24;
+
+                int pixel_id = y * rx_ + x;
+                buffer[pixel_id].r = readout.x;
+                buffer[pixel_id].g = readout.y;
+                buffer[pixel_id].b = readout.z;
+                buffer[pixel_id].a = 1.0;
             }
         }
     };
@@ -135,8 +143,19 @@ void ViewRayCaster::TakePicture(glm::vec3 camera_pos, glm::mat4 mvp, const Scene
         renderer_.Present();
     }
 
-    Log("RayCasterView").Info() << "Taking picture done. Saving to: "
-                                << Config::inst().GetOption<std::string>("target_file");
-    save_texture(Config::inst().GetOption<std::string>("target_file"), renderer_.Get(),
-                 tex_.Get());
+    std::string png_file_path =
+        Config::inst().GetOption<std::string>("target_file") + ".png";
+    std::string exr_file_path =
+        Config::inst().GetOption<std::string>("target_file") + ".exr";
+
+    Log("RayCasterView").Info() << "Taking picture done. Saving to: " << png_file_path
+                                << " and " << exr_file_path;
+
+    SaveTexture(Config::inst().GetOption<std::string>("target_file"), renderer_.Get(),
+                tex_.Get());
+
+    Imf::RgbaOutputFile file(exr_file_path.c_str(), rx_, ry_, Imf::WRITE_RGBA);
+    file.setFrameBuffer(buffer, 1, rx_);
+    file.writePixels(ry_);
+    delete[] buffer;
 }

@@ -4,6 +4,18 @@
 #include "exceptions.h"
 #include "lights.h"
 #include "log.h"
+#include "mesh.h"
+
+glm::vec3 GetDiffuse(const Vertex &v1, const Vertex &v2, const Vertex &v3,
+                     glm::vec3 bary_cords, const Texture &tex)
+{
+    glm::vec2 uv(0.0f, 0.0f);
+    uv += v1.tex_ * bary_cords.x;
+    uv += v2.tex_ * bary_cords.y;
+    uv += v3.tex_ * bary_cords.z;
+
+    return tex.GetPixel(uv);
+}
 
 MaterialFromAssimp::MaterialFromAssimp(aiMaterial *material, std::string dir)
 {
@@ -31,7 +43,7 @@ MaterialFromAssimp::MaterialFromAssimp(aiMaterial *material, std::string dir)
             ;
 
         std::string full_path = dir + "/" + path.data;
-        texture_ = std::make_unique<Texture>(GL_TEXTURE_2D, diffuse_color_, full_path);
+        texture_ = std::make_unique<Texture>(GL_TEXTURE_2D, full_path);
 
         Log("Material").Info() << "Loaded texture " << full_path;
         return;
@@ -39,33 +51,33 @@ MaterialFromAssimp::MaterialFromAssimp(aiMaterial *material, std::string dir)
     else
     {
         Log("Material").Warning() << "No diffuse texture found!";
-        texture_ =
-            std::make_unique<Texture>(GL_TEXTURE_2D, diffuse_color_, "res/fail.png");
+        texture_ = std::make_unique<Texture>(GL_TEXTURE_2D, "res/fail.png");
         return;
     }
 }
 
 glm::vec3 MaterialFromAssimp::BRDF(glm::vec3 from, glm::vec3 p, glm::vec3 to,
-                                   glm::vec3 normal) const
+                                   glm::vec3 normal, glm::vec3 barycentric,
+                                   const Vertex &p1, const Vertex &p2,
+                                   const Vertex &p3) const
 {
-    return diffuse_color_ * 0.33f;
+    auto kd = GetDiffuse(p1, p2, p3, barycentric, *texture_);
+    kd = kd / kd;
+    return diffuse_color_ * 0.15f * kd;
 }
 
 Material::Reflection MaterialFromAssimp::SampleF(glm::vec3 position, glm::vec3 normal,
-                                                 glm::vec3 in_dir, Sampler &s) const
+                                                 glm::vec3 in_dir, glm::vec3 barycentric,
+                                                 const Vertex &p1, const Vertex &p2,
+                                                 const Vertex &p3, Sampler &s) const
 {
-    while (true)
-    {
-        auto dir = s.SampleDirection();
-        if (dir.x * normal.x + dir.y * normal.y + dir.z * normal.z)
-        {
-            return {.radiance_ =
-                        BRDF(position + in_dir, position, position + dir, normal),
-                    .is_specular_ = false,
-                    .pdf_ = 1.0f,
-                    .dir_ = dir};
-        }
-    }
+    auto dir = s.SampleDirection(normal);
+
+    return {.radiance_ = BRDF(position + in_dir, position, position + dir, normal,
+                              barycentric, p1, p2, p3),
+            .is_specular_ = false,
+            .pdf_ = 1.0f,
+            .dir_ = dir};
 }
 
 void MaterialFromAssimp::SetupForOpenGL()

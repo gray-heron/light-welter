@@ -11,6 +11,9 @@ include(ExternalProject)
 include(CMakeRC.cmake)
 include(FindPkgConfig)
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
+message(${CMAKE_MODULE_PATH})
+
 enable_testing()
 
 # ==============================================================================
@@ -25,8 +28,25 @@ endif()
 add_compile_options(-Wall)
 
 include_directories(inc)
+include_directories(${CMAKE_BINARY_DIR})
 include_directories(${CMAKE_BINARY_DIR}/gen)
 include_directories(${CMAKE_BINARY_DIR}/dependencies/include)
+
+# ==============================================================================
+# build config
+# ==============================================================================
+
+# NOT USED YET
+
+set(SPECTRUM_LAMBDA_START 400 CACHE STRING "Where to start sampling the visible spectrum.")
+set(SPECTRUM_LAMBDA_END 700 CACHE STRING "Where to stop sampling the visible spectrum.")
+set(SPECTRUM_N_SAMPLES 60 CACHE STRING "Samples for visible spectrum.")
+
+configure_file (
+  "${PROJECT_SOURCE_DIR}/inc/build_config.h.in"
+  "${PROJECT_BINARY_DIR}/build_config.h"
+  )
+
 
 # ==============================================================================
 # external dependencies
@@ -59,6 +79,7 @@ find_package(SDL2 REQUIRED)
 PKG_SEARCH_MODULE(SDL2IMAGE REQUIRED SDL2_image>=2.0.0)
 find_package(OpenGL REQUIRED)                                                          
 find_package(GLEW REQUIRED)
+find_package(OpenEXR REQUIRED)
 find_package(assimp REQUIRED)
 
 include_directories(${SDL2_INCLUDE_DIRS})
@@ -94,6 +115,11 @@ set(SRCS_NOMAIN
   src/view_opengl.cpp
   src/raycaster.cpp
   src/pathtracer.cpp
+  src/spectrum.cpp
+  src/material.cpp
+  src/sampler.cpp
+  src/lights.cpp
+  src/lwmath.cpp
   
   inc/config.h
   inc/exceptions.h
@@ -106,12 +132,16 @@ set(SRCS_NOMAIN
   inc/renderable.h
   inc/view_raytracer.h
   inc/view_opengl.h
+  inc/material.h
+  inc/spectrum.h
+  inc/sampler.h
+  inc/lights.h
   )
 
 add_library (${PROJECT_NAME} STATIC ${SRCS_NOMAIN})
 
 target_link_libraries(${PROJECT_NAME}
-  ${Boost_LIBRARIES} pugixml SDL2pp resources ${SDL2IMAGE_LIBRARIES} ${SDL2_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${ASSIMP_LIBRARIES}
+  ${Boost_LIBRARIES} pugixml SDL2pp resources ${SDL2IMAGE_LIBRARIES} ${SDL2_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${ASSIMP_LIBRARIES} ${OPENEXR_LIBRARIES}
 )
 
 target_link_libraries(${PROJECT_NAME} ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES}) 

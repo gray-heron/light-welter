@@ -12,6 +12,8 @@
 #include "renderable.h"
 #include "texture.h"
 
+struct Vertex;
+
 class Material
 {
   public:
@@ -23,11 +25,13 @@ class Material
         glm::vec3 dir_;
     };
 
-    virtual glm::vec3 BRDF(glm::vec3 from, glm::vec3 p, glm::vec3 to,
-                           glm::vec3 normal) const = 0;
+    virtual glm::vec3 BRDF(glm::vec3 from, glm::vec3 p, glm::vec3 to, glm::vec3 normal,
+                           glm::vec3 barycentric, const Vertex &p1, const Vertex &p2,
+                           const Vertex &p3) const = 0;
 
     virtual Reflection SampleF(glm::vec3 position, glm::vec3 normal, glm::vec3 in_dir,
-                               Sampler &s) const = 0;
+                               glm::vec3 barycentric, const Vertex &p1, const Vertex &p2,
+                               const Vertex &p3, Sampler &s) const = 0;
 
     virtual glm::vec3 Emission() const = 0;
     virtual bool IsEmissive() const = 0;
@@ -48,11 +52,13 @@ class MaterialFromAssimp : public Material
   public:
     MaterialFromAssimp(aiMaterial *mat, std::string dir);
 
-    virtual glm::vec3 BRDF(glm::vec3 from, glm::vec3 p, glm::vec3 to,
-                           glm::vec3 normal) const override;
+    virtual glm::vec3 BRDF(glm::vec3 from, glm::vec3 p, glm::vec3 to, glm::vec3 normal,
+                           glm::vec3 barycentric, const Vertex &p1, const Vertex &p2,
+                           const Vertex &p3) const override;
 
     virtual Reflection SampleF(glm::vec3 position, glm::vec3 normal, glm::vec3 in_dir,
-                               Sampler &s) const override;
+                               glm::vec3 barycentric, const Vertex &p1, const Vertex &p2,
+                               const Vertex &p3, Sampler &s) const override;
 
     virtual glm::vec3 Emission() const override;
 

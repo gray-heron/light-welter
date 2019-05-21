@@ -2,16 +2,8 @@
 #include "pathtracer.h"
 #include "spectrum.h"
 
-glm::vec3 GetDiffuse(const Vertex &v1, const Vertex &v2, const Vertex &v3,
-                     glm::vec3 bary_cords, const Texture &tex)
-{
-    glm::vec2 uv(0.0f, 0.0f);
-    uv += v1.tex_ * bary_cords.x;
-    uv += v2.tex_ * bary_cords.y;
-    uv += v3.tex_ * bary_cords.z;
-
-    return tex.GetPixel(uv);
-}
+extern std::string S(glm::vec4 in);
+extern std::string S(glm::vec3 in);
 
 PathTracer::PathTracer(const Scene &scene)
     : scene_(scene), raycaster_(scene.mesh_),
@@ -38,6 +30,10 @@ glm::vec3 PathTracer::Trace(glm::vec3 camera_pos, glm::vec3 dir) const
 
 boost::optional<int> PathTracer::DebugTrace(glm::vec3 camera_pos, glm::vec3 dir) const
 {
+    auto result = Trace(camera_pos, dir);
+
+    log_.Info() << "Randiance from debug ray: " << S(result);
+
     if (auto result = raycaster_.Trace(camera_pos, dir))
         return result->second.object_id_;
     else
@@ -58,6 +54,7 @@ glm::vec3 PathTracer::Trace(glm::vec3 origin, glm::vec3 dir, bool include_emissi
         auto intersection = intersection_raw->first;
         auto surface = intersection_raw->second;
         auto &material = scene_.mesh_->GetMaterial(surface.object_id_);
+        const auto &vertices = scene_.mesh_->submeshes_[surface.object_id_].vertices_;
 
         float source_cosine = glm::abs(glm::dot<3, float, glm::qualifier::highp>(
             dir, glm::normalize(intersection.normal_)));
@@ -70,7 +67,7 @@ glm::vec3 PathTracer::Trace(glm::vec3 origin, glm::vec3 dir, bool include_emissi
             auto incoming_light = light.Sample(intersection.global_pos_, sampler);
 
             float light_cosine = glm::abs(glm::dot<3, float, glm::qualifier::highp>(
-                incoming_light.first - intersection.global_pos_,
+                glm::normalize(incoming_light.first - intersection.global_pos_),
                 glm::normalize(intersection.normal_)));
 
             auto shadowhit = raycaster_.Trace(
@@ -79,22 +76,39 @@ glm::vec3 PathTracer::Trace(glm::vec3 origin, glm::vec3 dir, bool include_emissi
 
             float dist = glm::length(incoming_light.first - intersection.global_pos_);
 
-            //            STRONG_ASSERT(shadowhit.is_initialized());
+            // STRONG_ASSERT(shadowhit.is_initialized());
 
-            if (shadowhit.is_initialized() && !(shadowhit->first.dist_ < dist))
+            if (shadowhit.is_initialized() &&
+                !(shadowhit->first.dist_ <
+                  dist + (32.0f * std::numeric_limits<float>::epsilon())))
             {
-                float g = light_cosine * source_cosine / (dist * dist);
+                float g = light_cosine * source_cosine /
+                          (dist * dist * glm::pi<float>() * glm::pi<float>());
 
                 ret += material.BRDF(incoming_light.first, intersection.global_pos_,
-                                     origin, intersection.normal_) *
+                                     origin, intersection.normal_,
+                                     intersection.barycentric_pos_, vertices[surface.t1_],
+                                     vertices[surface.t2_], vertices[surface.t3_]) *
                        incoming_light.second * beta * g * light.GetArea();
             }
         }
 
+        glm::vec3 skybox_dir = sampler.SampleDirection(intersection.normal_);
+        if (!raycaster_.Trace(intersection.global_pos_, skybox_dir))
+        {
+            ret += beta * scene_.skybox_.Sample(skybox_dir) *
+                   material.BRDF(intersection.global_pos_ + skybox_dir,
+                                 intersection.global_pos_, origin, intersection.normal_,
+                                 intersection.barycentric_pos_, vertices[surface.t1_],
+                                 vertices[surface.t2_], vertices[surface.t3_]);
+        }
+
         for (int i = 0; i < max_reflections_; i++)
         {
-            auto reflection = material.SampleF(intersection.global_pos_,
-                                               intersection.normal_, dir, sampler);
+            auto reflection =
+                material.SampleF(intersection.global_pos_, intersection.normal_, dir,
+                                 intersection.barycentric_pos_, vertices[surface.t1_],
+                                 vertices[surface.t2_], vertices[surface.t3_], sampler);
 
             glm::vec3 new_beta = beta * reflection.radiance_ / reflection.pdf_;
 
@@ -107,6 +121,6 @@ glm::vec3 PathTracer::Trace(glm::vec3 origin, glm::vec3 dir, bool include_emissi
     }
     else
     {
-        return scene_.skybox_.Sample(dir);
+        return beta * scene_.skybox_.Sample(dir);
     }
 }
