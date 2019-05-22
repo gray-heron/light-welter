@@ -11,7 +11,6 @@ using std::string;
 int main(int argc, char **argv)
 {
     Scene scene;
-
     Log log("main");
     log.Info() << "Ray tracer demo";
 
@@ -35,6 +34,8 @@ int main(int argc, char **argv)
     Config::inst().DumpSettings();
 
     //====================
+    scene.skybox_ = Skybox();
+
     bool interactive = Config::inst().GetOption<bool>("interactive");
     glm::vec3 ambient_rgb_ = Config::inst().GetOption<glm::vec3>("ambient_light");
 

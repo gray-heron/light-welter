@@ -4,7 +4,10 @@
 
 class Skybox
 {
+    glm::vec3 radiance_;
+
   public:
+    Skybox();
     glm::vec3 Sample(glm::vec3 dir) const;
 };
 

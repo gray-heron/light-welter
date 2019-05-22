@@ -23,7 +23,7 @@ class PathTracer
     const RayCaster raycaster_;
     const int recursion_level_;
     const int max_reflections_;
-    const float specular_reflection_factor_;
+    const float roulette_factor_;
 
   public:
     PathTracer(const Scene &scene);

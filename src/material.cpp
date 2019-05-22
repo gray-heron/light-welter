@@ -1,6 +1,7 @@
 
 
 #include "material.h"
+#include "config.h"
 #include "exceptions.h"
 #include "lights.h"
 #include "log.h"
@@ -22,6 +23,7 @@ MaterialFromAssimp::MaterialFromAssimp(aiMaterial *material, std::string dir)
     aiColor3D diff_color;
     material->Get(AI_MATKEY_COLOR_DIFFUSE, diff_color);
     diffuse_color_ = glm::vec3(diff_color.r, diff_color.g, diff_color.b);
+    parameter_correction_ = Config::inst().GetOption<float>("material_parameter_factor");
 
     aiColor3D emission_color;
     material->Get(AI_MATKEY_COLOR_EMISSIVE, emission_color);
@@ -46,12 +48,14 @@ MaterialFromAssimp::MaterialFromAssimp(aiMaterial *material, std::string dir)
         texture_ = std::make_unique<Texture>(GL_TEXTURE_2D, full_path);
 
         Log("Material").Info() << "Loaded texture " << full_path;
+        texture_used_ = true;
         return;
     }
     else
     {
         Log("Material").Warning() << "No diffuse texture found!";
         texture_ = std::make_unique<Texture>(GL_TEXTURE_2D, "res/fail.png");
+        texture_used_ = false;
         return;
     }
 }
@@ -61,9 +65,13 @@ glm::vec3 MaterialFromAssimp::BRDF(glm::vec3 from, glm::vec3 p, glm::vec3 to,
                                    const Vertex &p1, const Vertex &p2,
                                    const Vertex &p3) const
 {
-    auto kd = GetDiffuse(p1, p2, p3, barycentric, *texture_);
-    kd = kd / kd;
-    return diffuse_color_ * 0.15f * kd;
+    glm::vec3 kd;
+    if (texture_used_)
+        kd = GetDiffuse(p1, p2, p3, barycentric, *texture_);
+    else
+        kd = glm::vec3(1.0f, 1.0f, 1.0f);
+
+    return diffuse_color_ * parameter_correction_ * kd;
 }
 
 Material::Reflection MaterialFromAssimp::SampleF(glm::vec3 position, glm::vec3 normal,

@@ -9,8 +9,7 @@ PathTracer::PathTracer(const Scene &scene)
     : scene_(scene), raycaster_(scene.mesh_),
       recursion_level_(Config::inst().GetOption<int>("recursion")),
       max_reflections_(Config::inst().GetOption<int>("max_reflections")),
-      specular_reflection_factor_(
-          Config::inst().GetOption<float>("specular_reflection_factor"))
+      roulette_factor_(Config::inst().GetOption<float>("roulette_factor"))
 {
 }
 
@@ -46,8 +45,15 @@ glm::vec3 PathTracer::Trace(glm::vec3 origin, glm::vec3 dir, bool include_emissi
     if (depth == -1)
         return glm::vec3();
 
-    // RUSSION RULETTE
+    float p = std::max(beta.x, std::max(beta.y, beta.z)) * roulette_factor_;
+    p = std::min(1.0f, p);
 
+    if (sampler.Sample() > p)
+        return glm::vec3();
+
+    beta *= 1.0f / p;
+
+    // SAMPLE ALL LIGHTS
     if (auto intersection_raw = raycaster_.Trace(origin, dir))
     {
         glm::vec3 ret(0.0f);
@@ -93,6 +99,7 @@ glm::vec3 PathTracer::Trace(glm::vec3 origin, glm::vec3 dir, bool include_emissi
             }
         }
 
+        // SAMPLE SKY
         glm::vec3 skybox_dir = sampler.SampleDirection(intersection.normal_);
         if (!raycaster_.Trace(intersection.global_pos_, skybox_dir))
         {
@@ -103,6 +110,7 @@ glm::vec3 PathTracer::Trace(glm::vec3 origin, glm::vec3 dir, bool include_emissi
                                  vertices[surface.t2_], vertices[surface.t3_]);
         }
 
+        // SAMPLE MANY REFLECTIONS
         for (int i = 0; i < max_reflections_; i++)
         {
             auto reflection =

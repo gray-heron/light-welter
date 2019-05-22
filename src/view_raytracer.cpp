@@ -99,24 +99,23 @@ void ViewRayCaster::TakePicture(glm::vec3 camera_pos, glm::mat4 mvp, const Scene
                 uint8_t r;
                 uint8_t a;
 
-                auto readout = iso * value / float(samples_per_pixel);
-                b = float(0xff) * glm::min(readout.x, 1.0f);
+                auto readout = value * iso / float(samples_per_pixel);
+                r = float(0xff) * glm::min(readout.x, 1.0f);
                 g = float(0xff) * glm::min(readout.y, 1.0f);
-                r = float(0xff) * glm::min(readout.z, 1.0f);
+                b = float(0xff) * glm::min(readout.z, 1.0f);
                 a = 0xff;
 
                 uint8_t *target_pixel = raytracer_surface_ + y * rx_ * 4 + x * 4;
 
-                *(uint32_t *)target_pixel = r;
+                *(uint32_t *)target_pixel = b;
                 *(uint32_t *)target_pixel += (uint32_t)g << 8;
-                *(uint32_t *)target_pixel += (uint32_t)b << 16;
+                *(uint32_t *)target_pixel += (uint32_t)r << 16;
                 *(uint32_t *)target_pixel += (uint32_t)a << 24;
 
                 int pixel_id = y * rx_ + x;
                 buffer[pixel_id].r = readout.x;
                 buffer[pixel_id].g = readout.y;
                 buffer[pixel_id].b = readout.z;
-                buffer[pixel_id].a = 1.0;
             }
         }
     };
@@ -141,6 +140,8 @@ void ViewRayCaster::TakePicture(glm::vec3 camera_pos, glm::mat4 mvp, const Scene
         renderer_.Clear();
         renderer_.Copy(tex_, NullOpt, NullOpt);
         renderer_.Present();
+
+        log_.Info() << "Progress: " << float(x) / float(rx_) * 100.0f << "%.";
     }
 
     std::string png_file_path =
@@ -154,7 +155,7 @@ void ViewRayCaster::TakePicture(glm::vec3 camera_pos, glm::mat4 mvp, const Scene
     SaveTexture(Config::inst().GetOption<std::string>("target_file"), renderer_.Get(),
                 tex_.Get());
 
-    Imf::RgbaOutputFile file(exr_file_path.c_str(), rx_, ry_, Imf::WRITE_RGBA);
+    Imf::RgbaOutputFile file(exr_file_path.c_str(), rx_, ry_, Imf::WRITE_RGB);
     file.setFrameBuffer(buffer, 1, rx_);
     file.writePixels(ry_);
     delete[] buffer;

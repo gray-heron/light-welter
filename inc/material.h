@@ -48,6 +48,8 @@ class MaterialFromAssimp : public Material
     std::unique_ptr<Texture> texture_;
     glm::vec3 diffuse_color_;
     boost::optional<glm::vec3> emission_;
+    float parameter_correction_;
+    bool texture_used_;
 
   public:
     MaterialFromAssimp(aiMaterial *mat, std::string dir);
