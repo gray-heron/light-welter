@@ -2,29 +2,34 @@ newmtl white
 Ka 0 0 0
 Kd 1 1 1
 Ks 0 0 0
+Ka 1 1 1
 
 newmtl red
-Ka 0 0 0
+Ka 1 1 1
 Kd 1 0 0
 Ks 0 0 0
 
 newmtl green
-Ka 0 0 0
+Ka 1 1 1
 Kd 0 1 0
 Ks 0 0 0
 
 newmtl blue
-Ka 0 0 0
+Ka 1 1 1
 Kd 0 0 1
 Ks 0 0 0
 
-newmtl test
-Ka 0 0 0
+newmtl gray
+Ka 1 1 1
 Kd 0.5 0.5 0.5
 Ks 0 0 0
 
+newmtl mirror
+Ka 0.5 0.5 0.5
+Kd 0.2 0.2 0.2
+Ks 1 1 1
+
 newmtl light
-Ka 20 20 20
 Kd 1 1 1
 Ks 0 0 0
 Ke 10 10 10

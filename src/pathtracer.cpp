@@ -47,10 +47,11 @@ glm::vec3 PathTracer::Trace(glm::vec3 origin, glm::vec3 dir, bool include_emissi
 
     float p = std::max(beta.x, std::max(beta.y, beta.z)) * roulette_factor_;
     p = std::min(1.0f, p);
-
     if (sampler.Sample() > p)
+    {
+        // log_.Info() << "Terminating at " << depth;
         return glm::vec3();
-
+    }
     beta *= 1.0f / p;
 
     // SAMPLE ALL LIGHTS
@@ -120,9 +121,22 @@ glm::vec3 PathTracer::Trace(glm::vec3 origin, glm::vec3 dir, bool include_emissi
 
             glm::vec3 new_beta = beta * reflection.radiance_ / reflection.pdf_;
 
-            ret += Trace(intersection.global_pos_, reflection.dir_,
-                         reflection.is_specular_, new_beta, sampler, depth - 1) /
+            ret += Trace(intersection.global_pos_, reflection.dir_, false, new_beta,
+                         sampler, depth - 1) /
                    float(max_reflections_);
+        }
+
+        if (material.HasSpecular())
+        {
+            auto reflection = material.SampleSpecular(
+                intersection.global_pos_, intersection.normal_, dir,
+                intersection.barycentric_pos_, vertices[surface.t1_],
+                vertices[surface.t2_], vertices[surface.t3_], sampler);
+
+            glm::vec3 new_beta = beta * reflection.radiance_ / reflection.pdf_;
+
+            ret += Trace(intersection.global_pos_, reflection.dir_, true, new_beta,
+                         sampler, depth - 1);
         }
 
         return ret;

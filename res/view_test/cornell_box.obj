@@ -40,7 +40,7 @@ v 0.0 548.8 0.0
 f -4 -3 -2 -1
 
 o back_wall
-usemtl white
+usemtl mirror
 v 549.6   0.0 559.2
 v 0.0   0.0 559.2
 v 0.0 548.8 559.2
