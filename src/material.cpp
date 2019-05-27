@@ -87,7 +87,7 @@ glm::vec3 MaterialFromAssimp::BRDF(glm::vec3 from, glm::vec3 p, glm::vec3 to,
         std::max(0.0f, glm::dot<3, float, glm::qualifier::highp>(to - p, specular_dir) /
                            glm::length(specular_dir) / glm::length(to - p));
 
-    STRONG_ASSERT(glossy_term <= 1.1f)
+    STRONG_ASSERT(glossy_term <= 1.01f)
     return std::pow(glossy_term, 15.0f) * reflective_color_ * parameter_correction_ +
            diffuse_color_ * kd * parameter_correction_;
 }
@@ -115,7 +115,7 @@ MaterialFromAssimp::SampleSpecular(glm::vec3 position, glm::vec3 normal, glm::ve
         -in_dir;
 
     return {.radiance_ = *specular_color_ * parameter_correction_,
-            .pdf_ = 1.0f,
+            .pdf_ = 1.0f / (2.0f * glm::pi<float>()),
             .dir_ = specular_dir};
 }
 

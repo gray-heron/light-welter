@@ -45,15 +45,6 @@ glm::vec3 PathTracer::Trace(glm::vec3 origin, glm::vec3 dir, bool include_emissi
     if (depth == -1)
         return glm::vec3();
 
-    float p = std::max(beta.x, std::max(beta.y, beta.z)) * roulette_factor_;
-    p = std::min(1.0f, p);
-    if (sampler.Sample() > p)
-    {
-        // log_.Info() << "Terminating at " << depth;
-        return glm::vec3();
-    }
-    beta *= 1.0f / p;
-
     // SAMPLE ALL LIGHTS
     if (auto intersection_raw = raycaster_.Trace(origin, dir))
     {
@@ -69,34 +60,39 @@ glm::vec3 PathTracer::Trace(glm::vec3 origin, glm::vec3 dir, bool include_emissi
         if (include_emission)
             ret += material.Emission() * beta;
 
-        for (const auto &light : scene_.area_lights_)
+        for (int i = 0; i < max_reflections_; i++)
         {
-            auto incoming_light = light.Sample(intersection.global_pos_, sampler);
-
-            float light_cosine = glm::abs(glm::dot<3, float, glm::qualifier::highp>(
-                glm::normalize(incoming_light.first - intersection.global_pos_),
-                glm::normalize(intersection.normal_)));
-
-            auto shadowhit = raycaster_.Trace(
-                intersection.global_pos_,
-                glm::normalize(incoming_light.first - intersection.global_pos_));
-
-            float dist = glm::length(incoming_light.first - intersection.global_pos_);
-
-            // STRONG_ASSERT(shadowhit.is_initialized());
-
-            if (shadowhit.is_initialized() &&
-                !(shadowhit->first.dist_ <
-                  dist + (32.0f * std::numeric_limits<float>::epsilon())))
+            for (const auto &light : scene_.area_lights_)
             {
-                float g = light_cosine * source_cosine /
-                          (dist * dist * glm::pi<float>() * glm::pi<float>());
+                auto incoming_light = light.Sample(intersection.global_pos_, sampler);
 
-                ret += material.BRDF(incoming_light.first, intersection.global_pos_,
-                                     origin, intersection.normal_,
-                                     intersection.barycentric_pos_, vertices[surface.t1_],
-                                     vertices[surface.t2_], vertices[surface.t3_]) *
-                       incoming_light.second * beta * g * light.GetArea();
+                float light_cosine = glm::abs(glm::dot<3, float, glm::qualifier::highp>(
+                    glm::normalize(incoming_light.first - intersection.global_pos_),
+                    glm::normalize(intersection.normal_)));
+
+                auto shadowhit = raycaster_.Trace(
+                    intersection.global_pos_,
+                    glm::normalize(incoming_light.first - intersection.global_pos_));
+
+                float dist = glm::length(incoming_light.first - intersection.global_pos_);
+
+                // STRONG_ASSERT(shadowhit.is_initialized());
+
+                if (shadowhit.is_initialized() &&
+                    !(shadowhit->first.dist_ <
+                      dist + (32.0f * std::numeric_limits<float>::epsilon())))
+                {
+                    float g = light_cosine * source_cosine /
+                              (dist * dist * glm::pi<float>() * glm::pi<float>());
+
+                    ret += material.BRDF(incoming_light.first, intersection.global_pos_,
+                                         origin, intersection.normal_,
+                                         intersection.barycentric_pos_,
+                                         vertices[surface.t1_], vertices[surface.t2_],
+                                         vertices[surface.t3_]) *
+                           incoming_light.second * beta * g * light.GetArea() /
+                           float(max_reflections_);
+                }
             }
         }
 
@@ -120,6 +116,17 @@ glm::vec3 PathTracer::Trace(glm::vec3 origin, glm::vec3 dir, bool include_emissi
                                  vertices[surface.t2_], vertices[surface.t3_], sampler);
 
             glm::vec3 new_beta = beta * reflection.radiance_ / reflection.pdf_;
+
+            float p = std::max(reflection.radiance_.x,
+                               std::max(reflection.radiance_.y, reflection.radiance_.z)) *
+                      roulette_factor_;
+            p = std::min(1.0f, p);
+            if (sampler.Sample() > p)
+            {
+                // log_.Info() << "Terminating at " << depth;
+                continue;
+            }
+            new_beta *= 1.0f / p;
 
             ret += Trace(intersection.global_pos_, reflection.dir_, false, new_beta,
                          sampler, depth - 1) /
