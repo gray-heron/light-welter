@@ -101,7 +101,7 @@ Material::Reflection MaterialFromAssimp::SampleF(glm::vec3 position, glm::vec3 n
 
     return {.radiance_ = BRDF(position + in_dir, position, position + dir, normal,
                               barycentric, p1, p2, p3),
-            .pdf_ = 1.0f,
+            .pdf_ = 1.0f / (2.0f * glm::pi<float>()),
             .dir_ = dir};
 }
 
@@ -115,7 +115,7 @@ MaterialFromAssimp::SampleSpecular(glm::vec3 position, glm::vec3 normal, glm::ve
         -in_dir;
 
     return {.radiance_ = *specular_color_ * parameter_correction_,
-            .pdf_ = 1.0f / (2.0f * glm::pi<float>()),
+            .pdf_ = 1.0f,
             .dir_ = specular_dir};
 }
 
